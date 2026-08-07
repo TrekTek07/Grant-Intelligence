@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>$29 Experience Demo | Grant Intelligence™</title>
+  <meta name="description" content="Interactive demonstration of the Grant Intelligence $29 next phase. Uses sample data only and does not call Dify." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="demo-body">
+<header class="site-header assessment-header">
+  <a class="brand" href="index.html"><span class="brand-mark">GI</span><span><strong>Grant Intelligence™</strong><small>$29 Experience Demo</small></span></a>
+  <nav class="landing-nav"><a href="readiness.html">Free Assessment</a><a href="index.html">Home</a></nav>
+</header>
+
+<div class="demo-mode-banner"><strong>DEMO MODE</strong><span>No payment • No uploads • No Dify credits • Sample data only</span></div>
+
+<main class="demo-main">
+  <section class="demo-welcome">
+    <div>
+      <div class="eyebrow">YOU'VE COMPLETED THE FREE ASSESSMENT</div>
+      <h1>Now see what happens after the $29 purchase.</h1>
+      <p>This guided simulation lets you experience the next phase of Grant Intelligence™ before spending anything. The reports below use demonstration data—not your personal information.</p>
+      <div class="demo-score-row"><span>Your preliminary score</span><strong id="demoScore">—</strong><small id="demoLevel">Free assessment completed</small></div>
+    </div>
+    <div class="demo-step-card">
+      <span>SIMULATED CUSTOMER STATUS</span>
+      <strong>$29 Product Unlocked</strong>
+      <p>In the real paid experience, this is where your own idea, organization information and optional documents would begin feeding the Grant Intelligence modules.</p>
+    </div>
+  </section>
+
+  <section class="demo-explainer">
+    <div class="section-bar"><div><span class="eyebrow">THE NEXT PHASE</span><h2>What your $29 product begins to build</h2></div></div>
+    <div class="demo-phase-grid">
+      <article><b>01</b><h3>Organize the Idea</h3><p>Turn an idea, skill, mission or existing organization into a structured profile.</p></article>
+      <article><b>02</b><h3>Measure Readiness</h3><p>Identify what is already strong and what needs to be developed next.</p></article>
+      <article><b>03</b><h3>Build Funding Direction</h3><p>Clarify what types of funding and project approaches make the most sense.</p></article>
+      <article><b>04</b><h3>Explore Opportunities</h3><p>Review a shortlist of possible funding opportunities for further verification.</p></article>
+    </div>
+  </section>
+
+  <section class="demo-dashboard">
+    <div class="section-bar"><div><span class="eyebrow">INTERACTIVE SAMPLE</span><h2>Your Grant Intelligence workspace</h2><p>Click the modules to see sample deliverables.</p></div><span class="demo-pill">Demonstration Data</span></div>
+    <div class="demo-workspace-grid">
+      <div id="demoModules" class="demo-module-list"></div>
+      <aside class="demo-viewer" id="demoViewer">
+        <span class="eyebrow">SAMPLE REPORT</span>
+        <h2>Choose a module</h2>
+        <p>Select any module on the left to preview what the next phase can produce.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="demo-opportunities">
+    <div class="section-bar"><div><span class="eyebrow">MODULE 04 PREVIEW</span><h2>Sample opportunity selection</h2><p>This is how a customer can review candidates before Module 05. These are demonstration records only.</p></div></div>
+    <div class="demo-opportunity-grid" id="demoOpportunities"></div>
+    <div class="demo-selection-footer"><span id="demoSelectedCount">0 selected</span><button class="button button-primary" id="demoContinue" disabled>Continue to Funder Alignment</button></div>
+  </section>
+
+  <section class="demo-before-after">
+    <div>
+      <span class="eyebrow">WHY RETAKING MATTERS</span>
+      <h2>Your Readiness Index can become a progress marker.</h2>
+      <p>The $29 product does not magically make someone grant-ready. It helps create structure, identify missing pieces, and produce tangible planning assets. After completing those steps, a customer can retake the free assessment and measure the change.</p>
+    </div>
+    <div class="score-journey">
+      <div><small>FIRST ASSESSMENT</small><strong id="journeyStart">11</strong></div>
+      <span>→</span>
+      <div class="highlight"><small>AFTER EARLY DEVELOPMENT</small><strong>56</strong></div>
+      <span>→</span>
+      <div><small>FUTURE GOAL</small><strong>75+</strong></div>
+    </div>
+  </section>
+
+  <section class="demo-final-cta">
+    <div><span class="eyebrow">END OF DEMONSTRATION</span><h2>Ready to build yours instead of viewing samples?</h2><p>When checkout is connected, this button will unlock the real $29 experience. For now, it remains a simulation.</p></div>
+    <div class="demo-final-actions"><button class="button button-primary" id="fakeCheckout">Simulate Purchase Complete</button><a class="button button-secondary" href="readiness.html">Retake Free Assessment</a></div>
+  </section>
+</main>
+<footer class="site-footer"><span>Grant Intelligence™</span><small>Interactive demonstration • Sample data only</small></footer>
+<script src="demo.js"></script>
+</body>
+</html>

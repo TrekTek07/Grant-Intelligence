@@ -18,3 +18,9 @@ Suggested next integration phase:
 3. Map Modules 01–07 inputs/outputs
 4. Save report text + generated PDF/DOCX file references
 5. Replace prototype opportunity data with Module 04 output
+
+PAID EXPERIENCE DEMO
+- readiness.html now shows "Preview the $29 Experience" after the assessment results.
+- demo.html is the guided post-$29 simulation.
+- demo.js uses sample data only and does not call Dify.
+- The latest free-assessment score is saved in browser localStorage only so the demo can display it.
