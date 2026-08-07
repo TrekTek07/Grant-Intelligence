@@ -2,119 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Free Grant Readiness Assessment | Grant Intelligence™</title>
-  <meta name="description" content="Take the free Grant Intelligence Grant Readiness Assessment. No documents, no registration, no AI credits—just answer 18 questions and receive an instant score and recommendations." />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Free Grant Readiness Assessment — Grant Intelligence™</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="assessment-body">
-<header class="site-header assessment-header">
-  <a class="brand" href="index.html" aria-label="Grant Intelligence home">
-    <span class="brand-mark">GI</span>
-    <span><strong>Grant Intelligence™</strong><small>Free Grant Readiness Assessment</small></span>
-  </a>
-  <nav class="landing-nav">
-    <a href="index.html">Home</a>
-    <a href="workspace.html">Workspace</a>
-  </nav>
-</header>
-
-<main class="assessment-main">
-  <section id="assessmentIntro" class="assessment-intro">
-    <div class="assessment-intro-copy">
-      <div class="eyebrow">FREE • PRIVATE • INSTANT</div>
-      <h1>Discover Your Grant Readiness.</h1>
-      <p class="assessment-lead">You do not need a nonprofit, a business, a business plan—or even a finished project. If you have an idea, a skill, a cause you care about, or a willingness to help, this assessment is for you.</p>
-      <div class="assessment-benefits">
-        <span>No registration</span><span>No documents</span><span>No AI credits</span><span>18 questions</span><span>Instant score</span>
-      </div>
-      <div class="assessment-note"><strong>Your answers stay in your browser.</strong> This preliminary assessment uses simple scoring logic and does not send your answers to Dify or any AI service.</div>
-      <button id="startAssessment" class="button button-primary assessment-start">Start My Free Assessment</button>
-    </div>
-    <aside class="assessment-intro-panel">
-      <span class="score-preview-label">GRANT INTELLIGENCE™ READINESS INDEX</span>
-      <div class="score-preview-ring"><strong>?</strong><small>/ 100</small></div>
-      <h3>Start wherever you are.</h3>
-      <p>Idea stage, new business, aspiring nonprofit, community project, established organization—your score is designed to show your next steps, not exclude you.</p>
-    </aside>
-  </section>
-
-  <section id="assessmentQuiz" class="assessment-shell" hidden>
-    <div class="assessment-progress-wrap">
-      <div class="assessment-progress-top"><span id="questionCounter">Question 1 of 18</span><strong id="progressPercent">6%</strong></div>
-      <div class="assessment-progress"><i id="progressBar"></i></div>
-    </div>
-    <div id="questionCard" class="question-card"></div>
-    <div class="assessment-controls">
-      <button id="prevQuestion" class="button button-secondary">Back</button>
-      <button id="nextQuestion" class="button button-primary" disabled>Next Question</button>
-    </div>
-  </section>
-
-  <section id="assessmentResults" class="assessment-results" hidden>
-    <div class="results-hero">
-      <div>
-        <div class="eyebrow">YOUR PRELIMINARY RESULT</div>
-        <h2>Grant Intelligence™ Readiness Index</h2>
-        <p id="resultIntro">Your answers have been scored.</p>
-      </div>
-      <div class="score-ring"><strong id="finalScore">0</strong><small>/100</small></div>
-    </div>
-
-    <div class="result-grid">
-      <article class="result-card result-level-card">
-        <span class="result-kicker">READINESS LEVEL</span>
-        <h3 id="readinessLevel">Developing</h3>
-        <p id="readinessMessage"></p>
-      </article>
-      <article class="result-card">
-        <span class="result-kicker">WHAT THIS MEANS</span>
-        <p id="resultMeaning"></p>
-      </article>
-    </div>
-
-    <section class="category-results">
-      <div class="section-bar"><div><span class="eyebrow">SCORE BREAKDOWN</span><h2>Your readiness by category</h2></div></div>
-      <div id="categoryBars" class="category-bars"></div>
+<body class="assessment-shell">
+  <header class="nav"><div class="container nav-inner"><a class="brand" href="index.html"><span class="brand-mark">GI</span><span>Grant Intelligence™<small>Free readiness assessment</small></span></a><div class="nav-actions"><a class="btn btn-secondary" href="index.html">Exit</a></div></div></header>
+  <main class="assessment-wrap">
+    <section id="assessmentIntro">
+      <span class="eyebrow">No documents required</span>
+      <h1 style="font-size:clamp(2.8rem,7vw,4.6rem)">Discover your funding potential.</h1>
+      <p class="lead">There are no “bad” scores. A low score simply means you are earlier in the process. You can start with nothing more than an idea and a willingness to help.</p>
+      <div class="card" style="margin:28px 0"><strong>What this assessment does</strong><p>It measures your current planning, organizational, program, financial, and grant-readiness foundation using 18 general questions. Your answers stay in your browser and are not uploaded.</p></div>
+      <button class="btn btn-primary" id="startAssessment">Begin Assessment</button>
     </section>
 
-    <section class="recommendation-panel">
-      <div class="section-bar"><div><span class="eyebrow">YOUR NEXT MOVES</span><h2>Preliminary recommendations</h2></div></div>
-      <div id="recommendations" class="recommendation-list"></div>
-    </section>
-
-    <section class="idea-reminder">
-      <div class="idea-icon">💡</div>
-      <div><h3>Starting with only an idea? That counts.</h3><p>Grant Intelligence™ is designed to help people move from <em>“I want to help”</em> to a clearer project, stronger organization, better funding strategy, and eventually a fundable proposal. A lower preliminary score simply tells us where to begin.</p></div>
-    </section>
-
-    <section class="paid-cta">
-      <div class="paid-copy">
-        <div class="eyebrow">READY TO GO DEEPER?</div>
-        <h2>Turn your preliminary score into a personalized Grant Intelligence™ action plan.</h2>
-        <p>The free assessment gives you a snapshot. The $29 Grant Intelligence product is designed to go deeper into your idea or organization, identify gaps, clarify what you can build, and show you practical next steps toward funding readiness.</p>
-        <div class="paid-points">
-          <span>Organization or idea assessment</span>
-          <span>Funding direction</span>
-          <span>Readiness gaps</span>
-          <span>Action priorities</span>
-          <span>Grant-development roadmap</span>
-          <span>Personalized report</span>
-        </div>
-      </div>
-      <div class="price-card">
-        <span class="price-label">FULL GRANT INTELLIGENCE REPORT</span>
-        <strong class="price">$29</strong>
-        <small>One-time digital product</small>
-        <a class="button button-primary full" href="demo.html" id="purchaseButton">Preview the $29 Experience</a>
-        <small class="demo-disclaimer">Demo mode — no payment and no Dify credits used.</small>
-        <button class="retake-link" id="retakeAssessment">Retake Free Assessment</button>
+    <section id="assessmentPanel" style="display:none">
+      <div class="progress-shell"><div class="progress-meta"><span id="questionCount">Question 1 of 18</span><span id="progressPct">6%</span></div><div class="progress"><span id="progressBar"></span></div></div>
+      <div class="question-card">
+        <div class="question-kicker" id="questionCategory">Foundation</div>
+        <div class="question-title" id="questionTitle"></div>
+        <div class="choices" id="choices"></div>
+        <div class="assessment-actions"><button class="btn btn-secondary" id="prevBtn">Back</button><button class="btn btn-primary" id="nextBtn">Next</button></div>
       </div>
     </section>
-  </section>
-</main>
 
-<footer class="site-footer"><span>Grant Intelligence™</span><small>Preliminary assessment • Educational planning tool • No guarantee of grant eligibility or funding</small></footer>
-<script src="readiness.js"></script>
+    <section class="results" id="resultsPanel">
+      <div class="result-hero">
+        <span class="eyebrow">Your result</span>
+        <h2 style="margin-top:18px">Grant Intelligence™ Readiness Index</h2>
+        <div class="result-score" id="finalScore">0</div>
+        <div class="result-label" id="readinessLabel">Starting Point</div>
+      </div>
+      <div class="category-grid" id="categoryGrid"></div>
+      <div class="question-card" style="margin-top:18px">
+        <h3>Your next best moves</h3>
+        <div class="recommendations" id="recommendations"></div>
+      </div>
+      <div class="history" id="historyBox"></div>
+      <div class="banner" style="margin-top:24px"><div><span class="eyebrow">See what happens next</span><h2 style="font-size:2rem;margin-top:10px">Preview the $29 Grant Intelligence™ experience.</h2><p style="color:#b7c6d5;margin-bottom:0">Walk through a simulated paid workspace using demonstration data. No payment and no Dify credits are used.</p></div><a class="btn btn-gold" href="workspace.html">Enter Workspace Demo</a></div>
+      <div style="display:flex;justify-content:center;gap:10px;margin-top:20px;flex-wrap:wrap"><button class="btn btn-secondary" id="retakeBtn">Retake Assessment</button><a class="btn btn-secondary" href="index.html">Return Home</a></div>
+    </section>
+  </main>
+  <script src="readiness.js"></script>
 </body>
 </html>

@@ -2,82 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Grant Intelligence™ Workspace</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Grant Intelligence™ Workspace Demo</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="app-body">
-<div class="app-shell">
+<body class="workspace-body">
+<div class="workspace">
   <aside class="sidebar">
-    <a class="brand app-brand" href="index.html"><span class="brand-mark">GI</span><span><strong>Grant Intelligence™</strong><small>Workspace</small></span></a>
-    <nav class="side-nav">
-      <a class="active" href="workspace.html"><span>⌂</span> Dashboard</a>
-      <a href="#projects"><span>◆</span> Projects</a>
-      <a href="#opportunities"><span>◎</span> Opportunities</a>
-      <a href="#proposal"><span>✎</span> Proposal Builder</a>
-      <a href="#reports"><span>▤</span> Reports</a>
-      <a href="#downloads"><span>⇩</span> Downloads</a>
-    </nav>
-    <div class="sidebar-bottom">
-      <div class="account-badge"><span>JO</span><div><strong>Jushay Oasis</strong><small>Organization workspace</small></div></div>
-      <a href="#">Settings</a>
-      <a href="index.html">Exit Workspace</a>
-    </div>
+    <div class="brand side-brand"><span class="brand-mark">GI</span><span>Grant Intelligence™<small>Workspace demo</small></span></div>
+    <nav class="side-nav"><a class="active" href="#">Dashboard</a><a href="#modules">Modules</a><a href="#opportunities">Opportunities</a><a href="#reports">Reports</a><a href="#downloads">Downloads</a><a href="readiness.html">Readiness Index</a><a href="index.html">Public Website</a></nav>
+    <div class="side-bottom">Demonstration mode<br>No Dify calls • No payment</div>
   </aside>
-
   <main class="workspace-main">
-    <header class="workspace-header">
-      <div><p class="crumb">Workspace / Community Wellness Initiative</p><h1>Good evening.</h1><p>Here is where your grant-development project stands.</p></div>
-      <div class="header-actions"><button class="icon-button" title="Notifications">◔</button><button class="button button-primary" id="newProjectBtn">+ New Project</button></div>
-    </header>
+    <div class="demo-strip">You are viewing a simulated post-$29 workspace using sample data. This preview does not use Dify credits.</div>
+    <header class="workspace-top"><div><h1>Community Wellness Project</h1><p>Sample client workspace • Paid experience preview</p></div><span class="badge">Demo Active</span></header>
 
-    <section class="project-hero">
-      <div><span class="project-label">ACTIVE PROJECT</span><h2>Community Wellness Initiative</h2><p>Health education • Nutrition education • Youth development • Los Angeles County</p></div>
-      <div class="progress-block"><div class="progress-ring" style="--p:64"><span>64%</span></div><div><strong>7 of 11 modules started</strong><small>Next recommended action: review Module 04 opportunities</small></div></div>
-    </section>
+    <div class="metric-row">
+      <div class="metric"><span>Latest Readiness Index</span><strong id="demoScore">56</strong><span>Retake anytime to measure progress</span></div>
+      <div class="metric"><span>Modules Previewed</span><strong>7</strong><span>Organization → Proposal Writing</span></div>
+      <div class="metric"><span>Sample Opportunities</span><strong>5</strong><span>Choose one or more for alignment</span></div>
+    </div>
 
-    <section class="workspace-grid">
-      <div class="workspace-column main-column">
-        <div class="section-bar"><div><h2>Intelligence Modules</h2><p>Run, review, download, or revisit each stage independently.</p></div><button class="text-button">View history →</button></div>
+    <div class="dashboard-grid">
+      <section class="panel" id="modules">
+        <h3>Grant Development Pipeline</h3>
         <div class="module-list" id="moduleList"></div>
-      </div>
-
-      <aside class="workspace-column right-column">
-        <section class="advisor-card">
-          <div class="advisor-head"><span class="advisor-icon">GI</span><div><strong>Intelligence Advisor</strong><small>Project guidance</small></div></div>
-          <p>Your opportunity research is complete. Five candidate funders are ready for review.</p>
-          <div class="advisor-callout"><strong>Recommended next step</strong><span>Select one or more opportunities, then run Funder Alignment.</span></div>
-          <a class="button button-primary full" href="#opportunities">Review Opportunities</a>
-        </section>
-
-        <section class="mini-panel" id="downloads"><div class="mini-head"><h3>Recent Downloads</h3><button class="text-button">All files</button></div>
-          <div class="download-row"><span class="doc pdf">PDF</span><div><strong>Module 05 Funder Alignment</strong><small>Generated today</small></div><button>⇩</button></div>
-          <div class="download-row"><span class="doc docx">DOC</span><div><strong>Module 07 Proposal Draft</strong><small>Generated today</small></div><button>⇩</button></div>
-          <div class="download-row"><span class="doc xls">XLS</span><div><strong>Proposal Traceability Matrix</strong><small>Generated today</small></div><button>⇩</button></div>
-        </section>
+      </section>
+      <aside class="panel advisor">
+        <div class="avatar">AI</div>
+        <h3>Intelligence Advisor</h3>
+        <p>Your free assessment establishes a starting point. The paid process turns that starting point into structured reports, funder choices, readiness actions, and proposal planning.</p>
+        <p><strong>Suggested next step:</strong> Open Module 04 and select a sample opportunity, then preview Module 05 Funder Alignment.</p>
       </aside>
+    </div>
+
+    <section class="panel" id="opportunities" style="margin-top:20px">
+      <h3>Module 04 — Sample Opportunity Intelligence</h3>
+      <p style="color:#93a7ba">These are demonstration opportunities only. In production, this area will display the real opportunities returned for the user's profile.</p>
+      <div class="opportunities" id="opportunityList"></div>
+      <div style="margin-top:14px"><button class="btn btn-primary" id="continueAlignment">Continue to Funder Alignment</button></div>
     </section>
 
-    <section class="opportunity-section" id="opportunities">
-      <div class="section-bar"><div><span class="eyebrow">MODULE 04 RESULT</span><h2>Funding Opportunities</h2><p>Select the funders you want Module 05 to analyze.</p></div><span id="selectedCount" class="selection-count">0 selected</span></div>
-      <div class="opportunity-grid" id="opportunityGrid"></div>
-      <div class="selection-actions"><p id="selectionMessage">Select at least one opportunity to continue.</p><button class="button button-primary" id="continueBtn" disabled>Continue to Module 05</button></div>
-    </section>
+    <section class="panel report-viewer" id="reportViewer"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h3 id="reportTitle">Sample Report</h3><div><button class="small-btn" id="downloadTxt">Download Sample</button><button class="small-btn" id="closeReport">Close</button></div></div><div class="report-content" id="reportContent"></div></section>
 
-    <section class="report-library" id="reports">
-      <div class="section-bar"><div><span class="eyebrow">REPORT LIBRARY</span><h2>Your work stays organized.</h2><p>Return later to view or download completed deliverables.</p></div></div>
-      <div class="report-table">
-        <div class="table-head"><span>Report</span><span>Status</span><span>Updated</span><span>Downloads</span></div>
-        <div class="table-row"><span><b>01</b> Organization Intelligence Report</span><span class="pill complete">Complete</span><span>Today</span><span><button>PDF</button><button>DOCX</button></span></div>
-        <div class="table-row"><span><b>02</b> Grant Readiness Report</span><span class="pill complete">Complete</span><span>Today</span><span><button>PDF</button><button>DOCX</button></span></div>
-        <div class="table-row"><span><b>04</b> Opportunity Intelligence Report</span><span class="pill complete">Complete</span><span>Today</span><span><button>PDF</button><button>XLSX</button></span></div>
-        <div class="table-row"><span><b>07</b> Complete Proposal Draft</span><span class="pill review">Planning Draft</span><span>Today</span><span><button>PDF</button><button>DOCX</button></span></div>
+    <section class="panel" id="downloads" style="margin-top:20px">
+      <h3>Sample Deliverables</h3>
+      <div class="module-list">
+        <div class="module"><div class="module-num">PDF</div><div class="module-title"><strong>Grant Readiness Report</strong><span>Sample download placeholder</span></div><div class="module-actions"><button class="small-btn" onclick="downloadSample('Grant Readiness Report')">Download</button></div></div>
+        <div class="module"><div class="module-num">DOC</div><div class="module-title"><strong>Proposal Planning Draft</strong><span>Sample download placeholder</span></div><div class="module-actions"><button class="small-btn" onclick="downloadSample('Proposal Planning Draft')">Download</button></div></div>
+        <div class="module"><div class="module-num">XLS</div><div class="module-title"><strong>Opportunity Comparison</strong><span>Sample download placeholder</span></div><div class="module-actions"><button class="small-btn" onclick="downloadSample('Opportunity Comparison')">Download</button></div></div>
       </div>
     </section>
+
+    <section class="banner" style="margin-top:20px"><div><span class="eyebrow">Ready to make it yours?</span><h2 style="font-size:2rem;margin-top:10px">The real $29 experience uses your information—not sample data.</h2><p style="color:#bdcadd;margin-bottom:0">Your purchase button can be connected later. For now, this page lets you test the entire customer journey without spending Dify credits.</p></div><a class="btn btn-gold" href="readiness.html">Retake Free Assessment</a></section>
   </main>
 </div>
-
-<div class="modal" id="projectModal" aria-hidden="true"><div class="modal-card"><button class="modal-close" id="closeModal">×</button><span class="eyebrow">NEW PROJECT</span><h2>Create a Grant Intelligence project</h2><label>Project name<input value="" placeholder="e.g., Youth Wellness Initiative"></label><label>Primary goal<textarea placeholder="What are you trying to fund?"></textarea></label><div class="modal-actions"><button class="button button-secondary" id="cancelModal">Cancel</button><button class="button button-primary">Create Project</button></div></div></div>
-<script src="app.js"></script>
+<script src="workspace.js"></script>
 </body>
 </html>

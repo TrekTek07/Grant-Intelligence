@@ -1,26 +1,31 @@
-GRANT INTELLIGENCE™ — STANDALONE WEBSITE PROTOTYPE
+GRANT INTELLIGENCE™ VERSION 7 — STATIC WEBSITE PROTOTYPE
 
-Files:
-- index.html        Public-facing standalone Grant Intelligence landing page
-- workspace.html    Interactive workspace/dashboard prototype
-- styles.css        Complete responsive styling
-- app.js            Prototype interactions for modules, opportunity selection, and project modal
+FILES
+index.html       New public SaaS-style landing page
+readiness.html   18-question free readiness assessment
+readiness.js     Browser-only scoring and retake history
+workspace.html   Simulated post-$29 software workspace
+workspace.js     Static demo module/report/opportunity interactions
+pricing.html     Pricing preview page
+about.html       About page
+styles.css       Unified Version 7 color system and responsive layout
 
-This prototype is intentionally separate from The Buck Starts Here website.
-It contains no Dify API key and no backend/database integration yet.
+TEST FLOW
+1. Open index.html.
+2. Click Discover My Funding Potential.
+3. Complete the 18-question assessment.
+4. Review the score and recommendations.
+5. Click Enter Workspace Demo.
+6. Open sample reports, select sample opportunities, and test sample downloads.
+7. Return to the assessment and retake it; the prior score is stored locally in the browser.
 
-To preview locally:
-Open index.html in a browser, or upload the entire folder to GitHub Pages.
+IMPORTANT
+- This prototype does not call Dify.
+- It does not use AI credits.
+- It does not collect or upload personal data.
+- The $29 checkout is not connected yet.
+- Opportunity data and paid reports are demonstration data only.
 
-Suggested next integration phase:
-1. Persistent database/client project records
-2. Secure serverless API for Dify workflow calls
-3. Map Modules 01–07 inputs/outputs
-4. Save report text + generated PDF/DOCX file references
-5. Replace prototype opportunity data with Module 04 output
-
-PAID EXPERIENCE DEMO
-- readiness.html now shows "Preview the $29 Experience" after the assessment results.
-- demo.html is the guided post-$29 simulation.
-- demo.js uses sample data only and does not call Dify.
-- The latest free-assessment score is saved in browser localStorage only so the demo can display it.
+GITHUB PAGES
+Upload ALL files to the root of the Grant-Intelligence repository. The site should then be available at:
+https://trektek07.github.io/Grant-Intelligence/
