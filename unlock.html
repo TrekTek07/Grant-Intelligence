@@ -1,10 +1,6 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Free Grant Readiness Assessment — Grant Intelligence™</title>
-<style>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unlock Grant Intelligence™</title><style>
 :root{
   --bg:#07111f;
   --bg-2:#0b1728;
@@ -96,46 +92,18 @@ h3{margin:0 0 10px;font-size:1.2rem}
 @media(max-width:980px){.hero-grid,.dashboard-grid{grid-template-columns:1fr}.pillars,.journey{grid-template-columns:repeat(2,1fr)}.nav-links{display:none}.workspace{grid-template-columns:1fr}.sidebar{display:none}.workspace-main{padding:22px}.metric-row{grid-template-columns:1fr 1fr}}
 @media(max-width:640px){h1{font-size:2.8rem}.pillars,.journey,.category-grid,.metric-row{grid-template-columns:1fr}.hero{padding-top:54px}.banner{align-items:flex-start;flex-direction:column}.nav-actions .btn-secondary{display:none}.question-card{padding:24px}.module{grid-template-columns:38px 1fr}.module-actions{grid-column:2}.workspace-main{padding:16px}}
 
-</style>
-</head>
-<body class="assessment-shell">
-  <header class="nav"><div class="container nav-inner"><a class="brand" href="index.html"><span class="brand-mark">GI</span><span>Grant Intelligence™<small>Free readiness assessment</small></span></a><div class="nav-actions"><a class="btn btn-secondary" href="index.html">Exit</a></div></div></header>
-  <main class="assessment-wrap">
-    <section id="assessmentIntro">
-      <span class="eyebrow">No documents required</span>
-      <h1 style="font-size:clamp(2.8rem,7vw,4.6rem)">Discover your funding potential.</h1>
-      <p class="lead">There are no “bad” scores. A low score simply means you are earlier in the process. You can start with nothing more than an idea and a willingness to help.</p>
-      <div class="card" style="margin:28px 0"><strong>What this assessment does</strong><p>It measures your current planning, organizational, program, financial, and grant-readiness foundation using 18 general questions. Your answers stay in your browser and are not uploaded.</p></div>
-      <button class="btn btn-primary" id="startAssessment">Begin Assessment</button>
-    </section>
 
-    <section id="assessmentPanel" style="display:none">
-      <div class="progress-shell"><div class="progress-meta"><span id="questionCount">Question 1 of 18</span><span id="progressPct">6%</span></div><div class="progress"><span id="progressBar"></span></div></div>
-      <div class="question-card">
-        <div class="question-kicker" id="questionCategory">Foundation</div>
-        <div class="question-title" id="questionTitle"></div>
-        <div class="choices" id="choices"></div>
-        <div class="assessment-actions"><button class="btn btn-secondary" id="prevBtn">Back</button><button class="btn btn-primary" id="nextBtn">Next</button></div>
-      </div>
-    </section>
-
-    <section class="results" id="resultsPanel">
-      <div class="result-hero">
-        <span class="eyebrow">Your result</span>
-        <h2 style="margin-top:18px">Grant Intelligence™ Readiness Index</h2>
-        <div class="result-score" id="finalScore">0</div>
-        <div class="result-label" id="readinessLabel">Starting Point</div>
-      </div>
-      <div class="category-grid" id="categoryGrid"></div>
-      <div class="question-card" style="margin-top:18px">
-        <h3>Your next best moves</h3>
-        <div class="recommendations" id="recommendations"></div>
-      </div>
-      <div class="history" id="historyBox"></div>
-      <div class="banner" style="margin-top:24px"><div><span class="eyebrow">Ready for the next phase?</span><h2 style="font-size:2rem;margin-top:10px">Unlock the $29 Grant Intelligence™ intake.</h2><p style="color:#b7c6d5;margin-bottom:0">For testing, use a complimentary access code instead of paying. Your assessment score will carry into Module 00 on this device.</p></div><a class="btn btn-gold" href="unlock.html">Continue to Access</a></div>
-      <div style="display:flex;justify-content:center;gap:10px;margin-top:20px;flex-wrap:wrap"><button class="btn btn-secondary" id="retakeBtn">Retake Assessment</button><a class="btn btn-secondary" href="index.html">Return Home</a></div>
-    </section>
-  </main>
-  <script src="readiness.js"></script>
-</body>
-</html>
+.access-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:28px}
+.access-card{border:1px solid var(--line);background:rgba(255,255,255,.045);border-radius:22px;padding:26px}
+.field{display:grid;gap:8px;margin:16px 0}.field label{font-weight:750;color:#cfdae5}.field input,.field textarea,.field select{width:100%;background:#0a1728;color:#eef7ff;border:1px solid rgba(255,255,255,.13);border-radius:12px;padding:13px 14px;outline:none}.field input:focus{border-color:var(--cyan)}
+.notice{display:none;margin-top:14px;padding:12px 14px;border-radius:12px}.notice.ok{display:block;background:rgba(81,211,154,.09);border:1px solid rgba(81,211,154,.25);color:#9df1c3}.notice.bad{display:block;background:rgba(255,125,125,.09);border:1px solid rgba(255,125,125,.25);color:#ffadad}
+@media(max-width:760px){.access-grid{grid-template-columns:1fr}}
+</style></head>
+<body class="assessment-shell"><header class="nav"><div class="container nav-inner"><a class="brand" href="index.html"><span class="brand-mark">GI</span><span>Grant Intelligence™<small>Secure access</small></span></a><div class="nav-actions"><a class="btn btn-secondary" href="readiness.html">Back</a></div></div></header>
+<main class="assessment-wrap"><span class="eyebrow">Step 2 of your journey</span><h1 style="font-size:clamp(2.8rem,7vw,4.4rem)">Unlock your personalized intake.</h1><p class="lead">The normal path is a $29 purchase. During development, you can enter a complimentary access code and experience the same next step without paying.</p>
+<div class="access-grid">
+  <section class="access-card"><div class="question-kicker">Complimentary access</div><h2 style="font-size:1.8rem;margin-top:8px">Enter an access code</h2><p style="color:#aebccd">Use the internal test code to bypass payment and continue directly to Module 00.</p><div class="field"><label for="accessCode">Access code</label><input id="accessCode" autocomplete="off" placeholder="Enter code"></div><button class="btn btn-primary" id="codeBtn">Unlock Module 00</button><div id="codeNotice" class="notice"></div><p style="color:#758ca2;font-size:.83rem;margin-top:16px">Development note: code validation is browser-based for now. We will move it to Supabase before public launch.</p></section>
+  <section class="access-card"><div class="question-kicker">Customer purchase</div><h2 style="font-size:1.8rem;margin-top:8px">Purchase the $29 experience</h2><p style="color:#aebccd">This button is ready for your real checkout URL. After payment, customers will be returned to the same Module 00 intake.</p><div class="card" style="margin:18px 0;background:#10233a"><strong style="font-size:2.2rem">$29</strong><p style="margin:4px 0 0">One-time personalized Grant Intelligence™ intake and report experience.</p></div><button class="btn btn-gold" id="purchaseBtn">Purchase — Coming Next</button></section>
+</div>
+<div class="history" style="margin-top:22px">Your latest free-assessment score on this device: <strong id="carryScore">Not available</strong>. When you continue through the test code, that score is carried into Module 00.</div>
+</main><script src="unlock.js"></script></body></html>

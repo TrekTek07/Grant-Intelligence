@@ -29,3 +29,11 @@ IMPORTANT
 GITHUB PAGES
 Upload ALL files to the root of the Grant-Intelligence repository. The site should then be available at:
 https://trektek07.github.io/Grant-Intelligence/
+
+
+VERSION 7.2 TEST ACCESS
+------------------------
+Test access code: GI-TEST-2026
+Flow: Free Assessment -> Continue to Access -> enter code -> Module 00 -> Workspace.
+This code is intentionally client-side for development only. Move validation server-side (Supabase) before public launch.
+No Dify calls are made by the assessment, access gate, or Module 00 test intake.

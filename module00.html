@@ -1,10 +1,6 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Free Grant Readiness Assessment — Grant Intelligence™</title>
-<style>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Module 00 — Project Intake | Grant Intelligence™</title><style>
 :root{
   --bg:#07111f;
   --bg-2:#0b1728;
@@ -96,46 +92,19 @@ h3{margin:0 0 10px;font-size:1.2rem}
 @media(max-width:980px){.hero-grid,.dashboard-grid{grid-template-columns:1fr}.pillars,.journey{grid-template-columns:repeat(2,1fr)}.nav-links{display:none}.workspace{grid-template-columns:1fr}.sidebar{display:none}.workspace-main{padding:22px}.metric-row{grid-template-columns:1fr 1fr}}
 @media(max-width:640px){h1{font-size:2.8rem}.pillars,.journey,.category-grid,.metric-row{grid-template-columns:1fr}.hero{padding-top:54px}.banner{align-items:flex-start;flex-direction:column}.nav-actions .btn-secondary{display:none}.question-card{padding:24px}.module{grid-template-columns:38px 1fr}.module-actions{grid-column:2}.workspace-main{padding:16px}}
 
-</style>
-</head>
-<body class="assessment-shell">
-  <header class="nav"><div class="container nav-inner"><a class="brand" href="index.html"><span class="brand-mark">GI</span><span>Grant Intelligence™<small>Free readiness assessment</small></span></a><div class="nav-actions"><a class="btn btn-secondary" href="index.html">Exit</a></div></div></header>
-  <main class="assessment-wrap">
-    <section id="assessmentIntro">
-      <span class="eyebrow">No documents required</span>
-      <h1 style="font-size:clamp(2.8rem,7vw,4.6rem)">Discover your funding potential.</h1>
-      <p class="lead">There are no “bad” scores. A low score simply means you are earlier in the process. You can start with nothing more than an idea and a willingness to help.</p>
-      <div class="card" style="margin:28px 0"><strong>What this assessment does</strong><p>It measures your current planning, organizational, program, financial, and grant-readiness foundation using 18 general questions. Your answers stay in your browser and are not uploaded.</p></div>
-      <button class="btn btn-primary" id="startAssessment">Begin Assessment</button>
-    </section>
 
-    <section id="assessmentPanel" style="display:none">
-      <div class="progress-shell"><div class="progress-meta"><span id="questionCount">Question 1 of 18</span><span id="progressPct">6%</span></div><div class="progress"><span id="progressBar"></span></div></div>
-      <div class="question-card">
-        <div class="question-kicker" id="questionCategory">Foundation</div>
-        <div class="question-title" id="questionTitle"></div>
-        <div class="choices" id="choices"></div>
-        <div class="assessment-actions"><button class="btn btn-secondary" id="prevBtn">Back</button><button class="btn btn-primary" id="nextBtn">Next</button></div>
-      </div>
-    </section>
-
-    <section class="results" id="resultsPanel">
-      <div class="result-hero">
-        <span class="eyebrow">Your result</span>
-        <h2 style="margin-top:18px">Grant Intelligence™ Readiness Index</h2>
-        <div class="result-score" id="finalScore">0</div>
-        <div class="result-label" id="readinessLabel">Starting Point</div>
-      </div>
-      <div class="category-grid" id="categoryGrid"></div>
-      <div class="question-card" style="margin-top:18px">
-        <h3>Your next best moves</h3>
-        <div class="recommendations" id="recommendations"></div>
-      </div>
-      <div class="history" id="historyBox"></div>
-      <div class="banner" style="margin-top:24px"><div><span class="eyebrow">Ready for the next phase?</span><h2 style="font-size:2rem;margin-top:10px">Unlock the $29 Grant Intelligence™ intake.</h2><p style="color:#b7c6d5;margin-bottom:0">For testing, use a complimentary access code instead of paying. Your assessment score will carry into Module 00 on this device.</p></div><a class="btn btn-gold" href="unlock.html">Continue to Access</a></div>
-      <div style="display:flex;justify-content:center;gap:10px;margin-top:20px;flex-wrap:wrap"><button class="btn btn-secondary" id="retakeBtn">Retake Assessment</button><a class="btn btn-secondary" href="index.html">Return Home</a></div>
-    </section>
-  </main>
-  <script src="readiness.js"></script>
-</body>
-</html>
+.intake-grid{display:grid;grid-template-columns:.78fr 1.22fr;gap:20px;align-items:start}.intake-side{position:sticky;top:98px}.intake-card{border:1px solid var(--line);background:rgba(255,255,255,.045);border-radius:24px;padding:28px}.step-list{display:grid;gap:9px;margin-top:18px}.step-item{display:flex;gap:10px;align-items:center;color:#96aabc}.step-dot{width:26px;height:26px;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;font-size:.78rem;color:#7bdff8}.field{display:grid;gap:8px;margin:17px 0}.field label{font-weight:750;color:#d2dde8}.field input,.field textarea,.field select{width:100%;background:#0a1728;color:#eef7ff;border:1px solid rgba(255,255,255,.13);border-radius:12px;padding:13px 14px;outline:none}.field textarea{min-height:118px;resize:vertical}.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--cyan)}.helper{font-size:.83rem;color:#8196aa}.score-tile{border:1px solid rgba(52,213,255,.20);background:rgba(52,213,255,.06);border-radius:16px;padding:16px;margin-top:18px}.score-tile strong{font-size:2rem}@media(max-width:850px){.intake-grid{grid-template-columns:1fr}.intake-side{position:static}}
+</style></head>
+<body class="assessment-shell"><header class="nav"><div class="container nav-inner"><a class="brand" href="index.html"><span class="brand-mark">GI</span><span>Grant Intelligence™<small>Module 00 — Project intake</small></span></a><div class="nav-actions"><button class="btn btn-secondary" id="exitBtn">Exit Test</button></div></div></header>
+<main class="container" style="padding:44px 0 80px"><div class="intake-grid">
+<aside class="intake-side"><span class="eyebrow">Paid phase begins here</span><h1 style="font-size:clamp(2.7rem,6vw,4.2rem)">Create your project.</h1><p class="lead">Module 00 does not analyze your grant yet. It creates the project record that Modules 01–11 will build upon.</p><div class="score-tile"><span style="color:#93a7ba">Starting Readiness Index</span><br><strong id="startScore">—</strong><div class="helper">Carried forward from the free assessment on this device.</div></div><div class="step-list"><div class="step-item"><span class="step-dot">1</span> Starting point</div><div class="step-item"><span class="step-dot">2</span> Project identity</div><div class="step-item"><span class="step-dot">3</span> Mission / concept</div><div class="step-item"><span class="step-dot">4</span> Primary goal</div><div class="step-item"><span class="step-dot">5</span> Create workspace</div></div></aside>
+<section class="intake-card"><div class="question-kicker">Module 00</div><h2 style="font-size:2rem;margin-top:8px">Client Intake & Project Creation</h2><p style="color:#aebccd">For this test, nothing is uploaded and no Dify credits are used. The answers are saved only in this browser.</p>
+<form id="intakeForm">
+<div class="field"><label for="stage">Where are you starting?</label><select id="stage" required><option value="">Choose one</option><option>I only have an idea</option><option>I want to start a nonprofit</option><option>I already have a nonprofit</option><option>I have a business</option><option>I have an existing project or program</option><option>I represent an established organization</option></select></div>
+<div class="field"><label for="projectName">Project name</label><input id="projectName" required placeholder="Example: Healthy Families Initiative"><span class="helper">A working name is fine. You can change it later.</span></div>
+<div class="field"><label for="projectDescription">Describe what you want to do</label><textarea id="projectDescription" required placeholder="In your own words, what would you like to build, improve, or provide?"></textarea></div>
+<div class="field"><label for="organizationName">Organization or business name <span class="helper">(optional)</span></label><input id="organizationName" placeholder="Leave blank if you only have an idea"></div>
+<div class="field"><label for="mission">Mission or purpose statement <span class="helper">(optional)</span></label><textarea id="mission" placeholder="Leave blank if you do not have one yet. Grant Intelligence can help identify what is missing."></textarea></div>
+<div class="field"><label for="goal">What is your primary goal right now?</label><select id="goal" required><option value="">Choose one</option><option>Turn my idea into a fundable project</option><option>Improve grant readiness</option><option>Find funding opportunities</option><option>Start or strengthen a nonprofit</option><option>Expand an existing program</option><option>Develop a grant proposal</option></select></div>
+<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px"><button type="submit" class="btn btn-primary">Create My Grant Intelligence Workspace</button></div>
+</form></section></div></main><script src="module00.js"></script></body></html>
