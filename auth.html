@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grant Intelligence™ — Create Account / Sign In</title>
+<style>
+:root{--bg:#07111f;--panel:#0f2035;--text:#f5f8fb;--muted:#a8b7c8;--line:rgba(255,255,255,.11);--cyan:#34d5ff;--blue:#4f7cff;--gold:#d7b66d;--green:#51d39a;--red:#ff7d7d;--shadow:0 20px 60px rgba(0,0,0,.28)}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:linear-gradient(180deg,#07111f,#091828 55%,#0a1725);color:var(--text);min-height:100vh}.wrap{width:min(1000px,92vw);margin:auto;padding:40px 0 70px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}.brand{display:flex;align-items:center;gap:12px;font-weight:850}.mark{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));display:grid;place-items:center;color:#03101a;font-weight:950}.grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:24px;align-items:start}.intro,.card{border:1px solid var(--line);background:rgba(255,255,255,.04);border-radius:24px;padding:28px;box-shadow:var(--shadow)}h1{font-size:clamp(2.4rem,6vw,4.2rem);line-height:.98;letter-spacing:-.05em;margin:14px 0}p{color:var(--muted)}.eyebrow{display:inline-block;padding:7px 11px;border:1px solid rgba(52,213,255,.25);background:rgba(52,213,255,.07);color:#9eeeff;border-radius:999px;font-size:.78rem;font-weight:850;text-transform:uppercase;letter-spacing:.1em}.tabs{display:flex;gap:8px;margin-bottom:20px}.tab{flex:1;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--text);padding:11px;border-radius:12px;font-weight:800;cursor:pointer}.tab.active{background:rgba(52,213,255,.1);border-color:rgba(52,213,255,.4);color:#b9f4ff}.form{display:none}.form.active{display:block}.field{display:grid;gap:7px;margin:14px 0}.field label{font-weight:750}.field input{width:100%;padding:13px 14px;background:#091827;border:1px solid rgba(255,255,255,.14);border-radius:12px;color:white;outline:none}.field input:focus{border-color:var(--cyan)}.btn{width:100%;border:0;border-radius:13px;padding:13px 16px;font-weight:850;cursor:pointer;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#03101a;margin-top:8px}.notice{display:none;padding:12px 14px;border-radius:12px;margin-top:14px}.notice.show{display:block}.notice.ok{background:rgba(81,211,154,.09);border:1px solid rgba(81,211,154,.25);color:#9df1c3}.notice.bad{background:rgba(255,125,125,.09);border:1px solid rgba(255,125,125,.25);color:#ffadad}.small{font-size:.86rem;color:#8298ab}.steps{display:grid;gap:11px;margin-top:25px}.step{display:flex;gap:11px;align-items:center;color:#c4d1dd}.n{width:28px;height:28px;border-radius:9px;background:rgba(52,213,255,.09);display:grid;place-items:center;color:#8de9ff;font-weight:900}.back{color:#b4c5d4;text-decoration:none}@media(max-width:760px){.grid{grid-template-columns:1fr}.intro{order:2}}
+</style>
+</head>
+<body><main class="wrap">
+<div class="top"><div class="brand"><span class="mark">GI</span><span>Grant Intelligence™</span></div><a class="back" href="index.html">← Public website</a></div>
+<div class="grid">
+<section class="intro"><span class="eyebrow">One account • Every access mode</span><h1>Your Grant Intelligence workspace starts here.</h1><p>Create one verified account. The same Supabase account is used for Demo, Real Test, and future paid customer access.</p>
+<div class="steps"><div class="step"><span class="n">1</span> Create or sign in to your account</div><div class="step"><span class="n">2</span> Verify your email</div><div class="step"><span class="n">3</span> Redeem an access code or purchase</div><div class="step"><span class="n">4</span> Complete Module 00 and create your project</div></div>
+<p class="small">Your password is handled by Supabase Authentication. Grant Intelligence does not store your password in its own database tables.</p></section>
+<section class="card">
+<div class="tabs"><button class="tab active" id="signupTab">Create Account</button><button class="tab" id="signinTab">Sign In</button></div>
+<form class="form active" id="signupForm">
+<div class="field"><label for="signupName">Display name</label><input id="signupName" autocomplete="name" placeholder="Your name"></div>
+<div class="field"><label for="signupEmail">Email</label><input id="signupEmail" type="email" autocomplete="email" required placeholder="you@example.com"></div>
+<div class="field"><label for="signupPassword">Password</label><input id="signupPassword" type="password" autocomplete="new-password" required minlength="8" placeholder="At least 8 characters"></div>
+<button class="btn" type="submit">Create Account</button>
+</form>
+<form class="form" id="signinForm">
+<div class="field"><label for="signinEmail">Email</label><input id="signinEmail" type="email" autocomplete="email" required></div>
+<div class="field"><label for="signinPassword">Password</label><input id="signinPassword" type="password" autocomplete="current-password" required></div>
+<button class="btn" type="submit">Sign In</button>
+</form>
+<div id="authNotice" class="notice"></div>
+</section></div></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="auth.js"></script>
+</body></html>

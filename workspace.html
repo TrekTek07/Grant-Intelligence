@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Grant Intelligence™ Workspace Demo</title>
+  <title>Grant Intelligence™ Workspace</title>
 <style>
 :root{
   --bg:#07111f;
@@ -102,15 +102,15 @@ h3{margin:0 0 10px;font-size:1.2rem}
 <div class="workspace">
   <aside class="sidebar">
     <div class="brand side-brand"><span class="brand-mark">GI</span><span>Grant Intelligence™<small>Workspace demo</small></span></div>
-    <nav class="side-nav"><a class="active" href="#">Dashboard</a><a href="#modules">Modules</a><a href="#opportunities">Opportunities</a><a href="#reports">Reports</a><a href="#downloads">Downloads</a><a href="readiness.html">Readiness Index</a><a href="index.html">Public Website</a></nav>
-    <div class="side-bottom">Demonstration mode<br>No Dify calls • No payment</div>
+    <nav class="side-nav"><a class="active" href="#">Dashboard</a><a href="#modules">Modules</a><a href="#opportunities">Opportunities</a><a href="#reports">Reports</a><a href="#downloads">Downloads</a><a href="readiness.html">Readiness Index</a><a href="index.html">Public Website</a><a href="#" id="signOutLink">Sign Out</a></nav>
+    <div class="side-bottom" id="sideMode">Loading account…</div>
   </aside>
   <main class="workspace-main">
-    <div class="demo-strip">You are viewing a simulated post-$29 workspace using sample data. This preview does not use Dify credits.</div>
-    <header class="workspace-top"><div><h1>Community Wellness Project</h1><p>Sample client workspace • Paid experience preview</p></div><span class="badge">Demo Active</span></header>
+    <a href="module01.html" style="float:right;margin:8px 4% 0;color:#8de9ff;font-weight:800">Open Module 01 →</a><div class="demo-strip" id="modeStrip">Loading your Supabase workspace…</div>
+    <header class="workspace-top"><div><h1 id="workspaceProjectName">Grant Intelligence Project</h1><p id="workspaceSubtitle">Loading project…</p></div><span class="badge" id="workspaceBadge">Loading</span></header>
 
     <div class="metric-row">
-      <div class="metric"><span>Latest Readiness Index</span><strong id="demoScore">56</strong><span>Retake anytime to measure progress</span></div>
+      <div class="metric"><span>Latest Readiness Index</span><strong id="demoScore">—</strong><span>Retake anytime to measure progress</span></div>
       <div class="metric"><span>Modules Previewed</span><strong>7</strong><span>Organization → Proposal Writing</span></div>
       <div class="metric"><span>Sample Opportunities</span><strong>5</strong><span>Choose one or more for alignment</span></div>
     </div>
@@ -149,6 +149,6 @@ h3{margin:0 0 10px;font-size:1.2rem}
     <section class="banner" style="margin-top:20px"><div><span class="eyebrow">Ready to make it yours?</span><h2 style="font-size:2rem;margin-top:10px">The real $29 experience uses your information—not sample data.</h2><p style="color:#bdcadd;margin-bottom:0">Your purchase button can be connected later. For now, this page lets you test the entire customer journey without spending Dify credits.</p></div><a class="btn btn-gold" href="readiness.html">Retake Free Assessment</a></section>
   </main>
 </div>
-<script src="workspace.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="workspace.js"></script>
 </body>
 </html>

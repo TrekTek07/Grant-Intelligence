@@ -1,4 +1,55 @@
-const latest=localStorage.getItem('giLatestScore');if(latest)document.getElementById('demoScore').textContent=latest;
+let GI_WORKSPACE_PROFILE=null;
+let GI_WORKSPACE_PROJECT=null;
+
+async function loadWorkspaceIdentity(){
+  const session=await GI.requireSession('workspace.html');
+  if(!session) return false;
+  GI_WORKSPACE_PROFILE=await GI.getProfile();
+  if(!GI_WORKSPACE_PROFILE || !['demo','realtest','paid','admin'].includes(GI_WORKSPACE_PROFILE.access_level)){
+    location.replace('unlock.html'); return false;
+  }
+
+  let projectId=localStorage.getItem('giCurrentProjectId');
+  let query=giSupabase.from('projects').select('*').eq('user_id',session.user.id).order('created_at',{ascending:false}).limit(1);
+  if(projectId) query=giSupabase.from('projects').select('*').eq('id',projectId).eq('user_id',session.user.id).limit(1);
+  const {data,error}=await query;
+  if(error) throw error;
+  GI_WORKSPACE_PROJECT=data?.[0]||null;
+
+  const level=GI_WORKSPACE_PROFILE.access_level;
+  const isDemo=level==='demo';
+  const realTest=level==='realtest';
+  document.getElementById('workspaceProjectName').textContent=GI_WORKSPACE_PROJECT?.project_name || 'Your Grant Intelligence Workspace';
+  document.getElementById('workspaceSubtitle').textContent=
+    `${session.user.email} • ${GI_WORKSPACE_PROJECT?.project_stage || 'Project intake pending'}`;
+  document.getElementById('demoScore').textContent=
+    GI_WORKSPACE_PROJECT?.readiness_score ?? localStorage.getItem('giLatestScore') ?? '—';
+  document.getElementById('workspaceBadge').textContent=
+    isDemo?'Demo Mode':realTest?'Real Test Mode':level==='paid'?'Paid Customer':'Admin';
+  document.getElementById('sideMode').innerHTML=
+    isDemo?'Demo mode<br>Supabase active • No Dify':
+    realTest?'Real Test mode<br>Supabase active • Dify connection next':
+    'Live mode<br>Supabase active';
+  document.getElementById('modeStrip').textContent=
+    isDemo
+      ? 'DEMONSTRATION MODE — Your account and project are real Supabase records, but module previews use sample data and do not consume Dify credits.'
+      : realTest
+        ? 'REAL TEST MODE — This project uses real information saved to Supabase. The secure Dify connection is the next integration step; this v7.3 build does not call Dify yet.'
+        : 'LIVE PROJECT MODE — Your account and project are stored securely in Supabase.';
+  return true;
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const signOut=document.getElementById('signOutLink');
+  if(signOut) signOut.onclick=async e=>{e.preventDefault();await GI.signOut();};
+});
+
+loadWorkspaceIdentity().catch(err=>{
+  console.error(err);
+  const strip=document.getElementById('modeStrip');
+  if(strip) strip.textContent='Workspace could not load from Supabase: '+err.message;
+});
+
 const modules=[
 ['01','Organization Intelligence','Turn your idea or organization into a structured profile.'],
 ['02','Grant Readiness','Identify readiness strengths, missing documents, and preparation gaps.'],
