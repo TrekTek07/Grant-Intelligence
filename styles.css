@@ -12,3 +12,67 @@
 .home-assessment-cta{max-width:1280px;margin:60px auto;padding:44px 48px;border-radius:28px;background:linear-gradient(135deg,var(--green),#15483f);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:36px;box-shadow:var(--shadow)}.home-assessment-cta .eyebrow{color:var(--lime)}.home-assessment-cta h2{font-size:38px;letter-spacing:-1.6px;margin:8px 0 10px}.home-assessment-cta p{max-width:760px;color:#d8e7e2;line-height:1.6}.home-assessment-bullets{display:flex;flex-wrap:wrap;gap:12px 18px;font-size:11px;color:#e9f4f0}.home-assessment-bullets span{font-weight:700}
 @media(max-width:1050px){.audience-inner{grid-template-columns:1fr}.home-assessment-cta{margin:40px 5vw}.hero-assessment-first .hero-grid{grid-template-columns:1fr}}
 @media(max-width:700px){.nav-assessment{display:block!important}.landing-nav .nav-assessment{font-size:0}.landing-nav .nav-assessment:before{content:'Free';font-size:12px}.hero-actions{flex-direction:column;align-items:stretch}.hero-actions .button{width:100%}.hero-free-note{display:grid;gap:4px}.assessment-preview-score{align-items:center}.audience-band{padding:22px 5vw}.home-assessment-cta{padding:30px 24px;flex-direction:column;align-items:flex-start}.home-assessment-cta h2{font-size:30px}.home-assessment-cta .button{width:100%}}
+
+/* v4: clean, level Free Assessment card — no angled or tilted treatment */
+.assessment-card-clean{
+  position:relative;
+  transform:none!important;
+  rotate:0deg!important;
+  clip-path:none!important;
+  background:#fff!important;
+  color:var(--ink)!important;
+  border:1px solid #dfe7e2;
+  border-top:4px solid #c8a94a;
+  border-radius:24px;
+  padding:34px;
+  box-shadow:0 24px 60px rgba(16,44,42,.10);
+  overflow:hidden;
+}
+.assessment-card-clean:before,
+.assessment-card-clean:after{transform:none!important;clip-path:none!important}
+.assessment-card-clean .assessment-preview-badge{
+  background:#f7f4e8;
+  border:1px solid #e4d7a6;
+  color:#806a1e;
+}
+.assessment-card-clean .assessment-preview-score>div{
+  background:#f7fbf8;
+  border-color:#e1eee7;
+  border-top-color:var(--green);
+  box-shadow:inset 0 0 0 1px #edf4f0;
+}
+.assessment-card-clean .assessment-preview-score strong{color:var(--navy)}
+.assessment-card-clean .assessment-preview-score small{color:#71807a}
+.assessment-card-clean .assessment-preview-score>span{color:var(--navy)}
+.assessment-card-clean .assessment-preview-copy h3{color:var(--navy)}
+.assessment-card-clean .assessment-preview-copy p{color:#5f6e69}
+.assessment-card-clean .assessment-preview-list div{
+  background:#f7faf8;
+  border:1px solid #e7eeea;
+}
+.assessment-card-clean .assessment-preview-list span{
+  background:var(--mint);
+  color:var(--green);
+  font-size:14px;
+}
+.assessment-card-clean .assessment-preview-list p{color:#40514b}
+.assessment-card-clean .assessment-preview-button{
+  background:var(--green);
+  color:#fff;
+  border-color:var(--green);
+}
+.assessment-card-clean .assessment-preview-button:hover{filter:brightness(.96)}
+.assessment-card-footnote{
+  margin-top:12px;
+  text-align:center;
+  color:#7b8883;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.1px;
+}
+@media(max-width:700px){
+  .assessment-card-clean{padding:26px 22px;border-radius:20px}
+  .assessment-card-clean .assessment-preview-score{gap:14px}
+  .assessment-card-clean .assessment-preview-score>div{width:96px;height:96px;border-width:7px}
+  .assessment-card-clean .assessment-preview-score strong{font-size:36px}
+}
