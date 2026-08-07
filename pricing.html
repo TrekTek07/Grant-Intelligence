@@ -1,1 +1,94 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pricing — Grant Intelligence™</title><link rel="stylesheet" href="styles.css"></head><body><header class="nav"><div class="container nav-inner"><a class="brand" href="index.html"><span class="brand-mark">GI</span><span>Grant Intelligence™<small>Funding readiness platform</small></span></a><div class="nav-actions"><a class="btn btn-primary" href="readiness.html">Free Assessment</a></div></div></header><main class="section"><div class="container"><span class="eyebrow">Simple starting point</span><h1 style="font-size:clamp(2.8rem,6vw,4.7rem)">Start free. Go deeper for $29.</h1><div class="pillars" style="grid-template-columns:repeat(2,1fr);margin-top:30px"><div class="card"><div class="num">Free</div><h2 style="font-size:2rem">Readiness Assessment</h2><p>18 questions, instant score, category breakdown, recommendations, retakes, and workspace preview. No AI credits used.</p><a class="btn btn-secondary" href="readiness.html">Start Free</a></div><div class="card" style="border-color:rgba(215,182,109,.35)"><div class="num" style="color:#e3c67f">$29</div><h2 style="font-size:2rem">Grant Intelligence Discovery</h2><p>Designed to turn your real idea, experience, or organization into structured grant-planning outputs. Checkout connection will be added after testing.</p><a class="btn btn-gold" href="workspace.html">Preview Experience</a></div></div></div></main></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pricing — Grant Intelligence™</title>
+<style>
+:root{
+  --bg:#07111f;
+  --bg-2:#0b1728;
+  --panel:#0f2035;
+  --panel-2:#132942;
+  --text:#f5f8fb;
+  --muted:#a8b7c8;
+  --line:rgba(255,255,255,.11);
+  --cyan:#34d5ff;
+  --blue:#4f7cff;
+  --gold:#d7b66d;
+  --green:#51d39a;
+  --amber:#ffbf5b;
+  --red:#ff7d7d;
+  --white:#ffffff;
+  --ink:#0a1320;
+  --surface:#f5f8fc;
+  --shadow:0 20px 60px rgba(0,0,0,.28);
+  --radius:22px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);line-height:1.55}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit}
+.container{width:min(1180px,92vw);margin:0 auto}
+.nav{position:sticky;top:0;z-index:30;background:rgba(7,17,31,.82);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+.nav-inner{height:74px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.2px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--cyan),var(--blue));box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 10px 28px rgba(52,213,255,.18);display:grid;place-items:center;color:#03101a;font-weight:900}
+.brand small{display:block;color:var(--muted);font-weight:600;font-size:.68rem;letter-spacing:.13em;text-transform:uppercase}
+.nav-links{display:flex;gap:24px;color:#c7d4e2;font-size:.95rem}
+.nav-actions{display:flex;gap:10px;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid transparent;border-radius:14px;padding:12px 18px;font-weight:750;cursor:pointer;transition:.2s ease;background:none;color:inherit}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04111d;box-shadow:0 10px 30px rgba(70,155,255,.25)}
+.btn-secondary{border-color:var(--line);background:rgba(255,255,255,.04);color:var(--text)}
+.btn-gold{background:linear-gradient(135deg,#f0d594,var(--gold));color:#2d220c}
+.hero{padding:88px 0 64px;position:relative;overflow:hidden}
+.hero:before{content:"";position:absolute;inset:-30% auto auto 55%;width:620px;height:620px;background:radial-gradient(circle,rgba(52,213,255,.17),transparent 65%);filter:blur(12px);pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:46px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(52,213,255,.25);background:rgba(52,213,255,.07);color:#9eeeff;border-radius:999px;padding:7px 12px;font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+h1{font-size:clamp(3rem,7vw,5.7rem);line-height:.95;margin:20px 0 20px;letter-spacing:-.055em}
+h2{font-size:clamp(2rem,4vw,3.5rem);line-height:1.05;letter-spacing:-.04em;margin:0 0 16px}
+h3{margin:0 0 10px;font-size:1.2rem}
+.lead{font-size:1.16rem;color:#c0cfdd;max-width:720px}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.hero-note{margin-top:18px;color:#8fa3b7;font-size:.92rem}
+.gradient-text{background:linear-gradient(90deg,#fff,#9feeff 46%,#90a8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.preview-card{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.035));border:1px solid var(--line);border-radius:28px;padding:22px;box-shadow:var(--shadow)}
+.preview-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.status-dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 6px rgba(81,211,154,.08)}
+.score-ring{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;margin:22px auto;background:conic-gradient(var(--cyan) 0 56%,rgba(255,255,255,.09) 56% 100%);position:relative}
+.score-ring:before{content:"";position:absolute;width:118px;height:118px;border-radius:50%;background:#0c1b2e}
+.score-ring strong{position:relative;font-size:2.6rem;letter-spacing:-.04em}
+.mini-bars{display:grid;gap:12px}
+.mini-bar-row{display:grid;grid-template-columns:140px 1fr 42px;align-items:center;gap:12px;font-size:.86rem;color:#b7c5d4}
+.bar{height:8px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}.bar span{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));border-radius:999px}
+.section{padding:78px 0}
+.section.alt{background:#0a1626}
+.section-head{max-width:780px;margin-bottom:34px}.section-head p{color:#aab9c8;font-size:1.06rem}
+.pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card{border:1px solid var(--line);background:rgba(255,255,255,.035);border-radius:20px;padding:22px}
+.card .num{font-size:.78rem;color:#78dff8;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.card p{color:#aebccd;margin-bottom:0}
+.journey{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.journey .card{position:relative;overflow:hidden}.journey .card:after{content:"";position:absolute;left:0;bottom:0;height:3px;width:100%;background:linear-gradient(90deg,var(--cyan),var(--blue))}
+.banner{border:1px solid rgba(215,182,109,.25);background:linear-gradient(135deg,rgba(215,182,109,.08),rgba(79,124,255,.06));border-radius:26px;padding:34px;display:flex;justify-content:space-between;gap:28px;align-items:center}
+.footer{border-top:1px solid var(--line);padding:32px 0;color:#7f93a7;font-size:.9rem}
+.footer-inner{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+
+/* Assessment */
+.assessment-shell{min-height:100vh;background:linear-gradient(180deg,#07111f,#091828 55%,#0a1725)}
+.assessment-wrap{width:min(860px,92vw);margin:0 auto;padding:48px 0 80px}
+.progress-shell{margin:20px 0 30px}.progress-meta{display:flex;justify-content:space-between;color:#93a7ba;font-size:.9rem;margin-bottom:10px}.progress{height:10px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}.progress span{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));width:0;transition:.3s}
+.question-card{border:1px solid var(--line);background:rgba(255,255,255,.045);border-radius:26px;padding:34px;box-shadow:var(--shadow)}
+.question-kicker{color:#7cdff7;text-transform:uppercase;letter-spacing:.12em;font-size:.78rem;font-weight:900}.question-title{font-size:1.8rem;line-height:1.2;margin:12px 0 22px}.choices{display:grid;gap:11px}.choice{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid rgba(255,255,255,.10);border-radius:14px;cursor:pointer;background:rgba(255,255,255,.025);transition:.18s}.choice:hover,.choice.selected{border-color:rgba(52,213,255,.55);background:rgba(52,213,255,.08)}.choice input{accent-color:#34d5ff}
+.assessment-actions{display:flex;justify-content:space-between;gap:12px;margin-top:22px}
+.results{display:none}.results.active{display:block}.result-hero{text-align:center}.result-score{font-size:5.2rem;line-height:1;font-weight:900;letter-spacing:-.06em;background:linear-gradient(90deg,#fff,#63ddff);-webkit-background-clip:text;background-clip:text;color:transparent}.result-label{color:#9db0c2;font-size:1.05rem}
+.category-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:28px 0}.category{border:1px solid var(--line);background:rgba(255,255,255,.035);padding:16px;border-radius:16px}.category-head{display:flex;justify-content:space-between;font-weight:750;margin-bottom:10px}.recommendations{display:grid;gap:10px}.rec{border-left:3px solid var(--cyan);background:rgba(255,255,255,.035);padding:14px 16px;border-radius:0 12px 12px 0;color:#c9d6e2}.history{margin-top:24px;border:1px dashed rgba(255,255,255,.14);padding:18px;border-radius:16px;color:#aebccd}
+
+/* Workspace */
+.workspace-body{background:#07111f;color:#edf4fb;min-height:100vh}
+.workspace{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.sidebar{background:#081524;border-right:1px solid var(--line);padding:24px 18px;position:sticky;top:0;height:100vh}.side-brand{margin-bottom:26px}.side-nav{display:grid;gap:7px}.side-nav a{padding:11px 12px;border-radius:12px;color:#aab9c9}.side-nav a.active,.side-nav a:hover{background:rgba(52,213,255,.08);color:#dff9ff}.side-bottom{position:absolute;left:18px;right:18px;bottom:24px;border-top:1px solid var(--line);padding-top:16px;color:#7f92a5;font-size:.86rem}
+.workspace-main{padding:28px 34px 60px;min-width:0}.workspace-top{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:26px}.workspace-top h1{font-size:2rem;margin:0;letter-spacing:-.03em}.workspace-top p{margin:3px 0 0;color:#8ea2b5}.badge{padding:8px 11px;border-radius:999px;background:rgba(81,211,154,.09);color:#8ef0bd;border:1px solid rgba(81,211,154,.18);font-size:.82rem;font-weight:800}
+.dashboard-grid{display:grid;grid-template-columns:1.5fr .8fr;gap:20px}.panel{border:1px solid var(--line);background:#0d1d30;border-radius:20px;padding:20px}.panel h3{font-size:1rem;color:#c7d4e2}.metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}.metric{background:#10233a;border:1px solid var(--line);border-radius:16px;padding:16px}.metric strong{display:block;font-size:1.75rem}.metric span{color:#8fa4b7;font-size:.84rem}.module-list{display:grid;gap:10px}.module{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:13px;background:#10233a;border:1px solid var(--line);padding:14px;border-radius:16px}.module-num{width:38px;height:38px;border-radius:12px;background:#0a1728;display:grid;place-items:center;color:#78dff8;font-weight:900}.module-title strong{display:block}.module-title span{font-size:.83rem;color:#89a0b4}.module-actions{display:flex;gap:8px}.small-btn{border:1px solid var(--line);background:rgba(255,255,255,.035);color:#d8e4ef;border-radius:10px;padding:8px 10px;cursor:pointer}.small-btn.primary{border-color:rgba(52,213,255,.28);background:rgba(52,213,255,.09);color:#9af0ff}
+.advisor{background:linear-gradient(160deg,#10243b,#0b1b2d);border:1px solid rgba(52,213,255,.18)}.advisor .avatar{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--cyan),var(--blue));display:grid;place-items:center;color:#04101a;font-weight:900;margin-bottom:14px}.advisor p{color:#adc0d1}.opportunities{display:grid;gap:10px}.opp{border:1px solid var(--line);background:#10233a;border-radius:14px;padding:14px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}.opp small{color:#8ea3b7}.score-chip{padding:7px 10px;border-radius:999px;background:rgba(81,211,154,.10);color:#93f0be;font-weight:850}
+.report-viewer{margin-top:20px;display:none}.report-viewer.active{display:block}.report-content{white-space:pre-wrap;color:#b8c8d7;font-size:.94rem}.locked{opacity:.5}.demo-strip{border:1px solid rgba(215,182,109,.2);background:rgba(215,182,109,.06);padding:12px 14px;border-radius:12px;color:#e8d3a1;font-size:.88rem;margin-bottom:18px}
+
+@media(max-width:980px){.hero-grid,.dashboard-grid{grid-template-columns:1fr}.pillars,.journey{grid-template-columns:repeat(2,1fr)}.nav-links{display:none}.workspace{grid-template-columns:1fr}.sidebar{display:none}.workspace-main{padding:22px}.metric-row{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){h1{font-size:2.8rem}.pillars,.journey,.category-grid,.metric-row{grid-template-columns:1fr}.hero{padding-top:54px}.banner{align-items:flex-start;flex-direction:column}.nav-actions .btn-secondary{display:none}.question-card{padding:24px}.module{grid-template-columns:38px 1fr}.module-actions{grid-column:2}.workspace-main{padding:16px}}
+
+</style></head><body><header class="nav"><div class="container nav-inner"><a class="brand" href="index.html"><span class="brand-mark">GI</span><span>Grant Intelligence™<small>Funding readiness platform</small></span></a><div class="nav-actions"><a class="btn btn-primary" href="readiness.html">Free Assessment</a></div></div></header><main class="section"><div class="container"><span class="eyebrow">Simple starting point</span><h1 style="font-size:clamp(2.8rem,6vw,4.7rem)">Start free. Go deeper for $29.</h1><div class="pillars" style="grid-template-columns:repeat(2,1fr);margin-top:30px"><div class="card"><div class="num">Free</div><h2 style="font-size:2rem">Readiness Assessment</h2><p>18 questions, instant score, category breakdown, recommendations, retakes, and workspace preview. No AI credits used.</p><a class="btn btn-secondary" href="readiness.html">Start Free</a></div><div class="card" style="border-color:rgba(215,182,109,.35)"><div class="num" style="color:#e3c67f">$29</div><h2 style="font-size:2rem">Grant Intelligence Discovery</h2><p>Designed to turn your real idea, experience, or organization into structured grant-planning outputs. Checkout connection will be added after testing.</p><a class="btn btn-gold" href="workspace.html">Preview Experience</a></div></div></div></main></body></html>
