@@ -1,0 +1,51 @@
+GRANT INTELLIGENCE™ — GOOGLE SAFE BROWSING REVIEW NOTES
+=======================================================
+
+SECURITY CHANGE MADE
+--------------------
+The previous Grant Intelligence account page contained email/password fields.
+Google Search Console reported:
+
+  Possible Phishing Detected on User Login
+
+The site has been revised so the Grant Intelligence website no longer accepts
+or requests a password.
+
+CURRENT AUTHENTICATION
+----------------------
+- User enters email address only.
+- Supabase Authentication sends a secure email verification / magic-link.
+- User clicks the email link to establish the session.
+- The Grant Intelligence website does not request Google, Gmail, GitHub,
+  Supabase, banking, employer, or other third-party passwords.
+- Private Dify credentials remain server-side in Supabase Edge Function secrets.
+
+FILES CHANGED / ADDED
+---------------------
+auth.html
+auth.js
+auth-callback.html
+security.html
+privacy.html
+
+BEFORE REQUESTING GOOGLE REVIEW
+-------------------------------
+1. Upload ALL files from this package to GitHub and overwrite existing files.
+2. Confirm this page contains NO password field:
+   https://trektek07.github.io/Grant-Intelligence/auth.html
+3. View page source and confirm that no password input or password-based Supabase sign-in method remains.
+4. Test email-link authentication only after Google Safe Browsing allows access,
+   or in a controlled test environment with a unique test email.
+5. Keep Google's verification HTML file in the repository permanently.
+6. In Search Console -> Security Issues, request review.
+
+SUGGESTED REVIEW TEXT
+---------------------
+We reviewed the reported "Possible Phishing Detected on User Login" issue and
+changed the Grant Intelligence authentication flow. The site no longer asks
+users to enter a password. Authentication now uses Supabase passwordless email
+verification / magic-link access. The website does not impersonate another
+service and does not request credentials for Google, Gmail, GitHub, Supabase,
+banking, or any third-party account. We also added clear Security and Privacy
+pages explaining the authentication flow and account-safety practices. Please
+review the updated site and remove the phishing warning if appropriate.
