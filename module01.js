@@ -1,7 +1,27 @@
-const $=id=>document.getElementById(id);
-let session=null,profile=null,project=null;
+// Grant Intelligence™
+// Module 01 — Organization Intelligence
+// Async website controller
+//
+// Website -> run-module01 launcher
+//         -> immediate Processing status
+//         -> polls Supabase module_results
+//         -> displays report when completed
 
-const DEMO_REPORT=`# GRANT INTELLIGENCE™
+const $ = (id) => document.getElementById(id);
+
+let session = null;
+let profile = null;
+let project = null;
+
+let pollTimer = null;
+let processingStartedAt = null;
+
+
+// ============================================================
+// DEMO REPORT
+// ============================================================
+
+const DEMO_REPORT = `# GRANT INTELLIGENCE™
 
 ## Module 01 – Organization Intelligence (DEMO SAMPLE)
 
@@ -27,79 +47,729 @@ Priority Development Areas:
 Recommended Next Step:
 Proceed to Grant Readiness after converting the idea into a documented organization/project profile.`;
 
-function status(msg,kind=''){
-  $('runStatus').textContent=msg;
-  $('runStatus').className='statusbox '+kind;
+
+// ============================================================
+// STATUS DISPLAY
+// ============================================================
+
+function status(message, kind = "") {
+  const box = $("runStatus");
+
+  if (!box) return;
+
+  box.textContent = message;
+  box.className = "statusbox " + kind;
 }
 
-async function load(){
-  session=await GI.requireSession('module01.html');
-  if(!session)return;
-  profile=await GI.getProfile();
-  if(!profile || !['demo','realtest','paid','admin'].includes(profile.access_level)){
-    location.replace('unlock.html');return;
-  }
-  $('modePill').textContent=
-    profile.access_level==='demo'?'DEMO • NO DIFY':
-    profile.access_level==='realtest'?'REAL TEST • DIFY':
-    profile.access_level==='paid'?'PAID • DIFY':'ADMIN';
 
-  const projectId=localStorage.getItem('giCurrentProjectId');
-  if(!projectId){
-    $('projectInfo').textContent='No current project. Complete Module 00 first.';
-    $('runBtn').disabled=true;return;
-  }
-  const {data,error}=await giSupabase.from('projects').select('*').eq('id',projectId).single();
-  if(error)throw error;
-  project=data;
-  $('projectInfo').innerHTML=`<strong>${project.project_name}</strong><br>${project.organization_name||'No organization name yet'}<br>Stage: ${project.project_stage||'Not Found'}<br>Readiness: ${project.readiness_score??'Not Found'}`;
+// ============================================================
+// BUTTON STATE
+// ============================================================
 
-  const {data:existing}=await giSupabase.from('module_results')
-    .select('*').eq('project_id',project.id).eq('module_number',1).maybeSingle();
-  if(existing?.status==='completed' && existing.report_text){
-    $('report').textContent=existing.report_text;
-    status('A saved Module 01 report was loaded from Supabase.','ok');
+function setRunButtonProcessing(isProcessing) {
+  const button = $("runBtn");
+
+  if (!button) return;
+
+  button.disabled = isProcessing;
+
+  if (isProcessing) {
+    button.textContent = "Module 01 Processing…";
+  } else {
+    button.textContent = "Run Module 01";
   }
 }
 
-$('runBtn').addEventListener('click',async()=>{
-  try{
-    if(!project)return;
-    $('runBtn').disabled=true;
-    if(profile.access_level==='demo'){
-      status('Demo mode: loading sample report. No Dify credits are used.');
-      const {error}=await giSupabase.from('module_results').upsert({
-        user_id:session.user.id,
-        project_id:project.id,
-        module_number:1,
-        module_name:'Organization Intelligence',
-        status:'completed',
-        report_text:DEMO_REPORT,
-        output_data:{sample:true,source:'static_demo'},
-        completed_at:new Date().toISOString(),
-        updated_at:new Date().toISOString()
-      },{onConflict:'project_id,module_number'});
-      if(error)throw error;
-      $('report').textContent=DEMO_REPORT;
-      status('Demo Module 01 completed and saved to Supabase. Dify was not called.','ok');
+
+// ============================================================
+// REPORT DISPLAY
+// ============================================================
+
+function showReport(reportText) {
+  const report = $("report");
+
+  if (!report) return;
+
+  report.textContent =
+    reportText ||
+    "Module 01 completed, but no report text was returned.";
+}
+
+
+// ============================================================
+// FRIENDLY ELAPSED TIME
+// ============================================================
+
+function elapsedMessage() {
+  if (!processingStartedAt) {
+    return "";
+  }
+
+  const elapsedSeconds = Math.floor(
+    (Date.now() - processingStartedAt) / 1000
+  );
+
+  if (elapsedSeconds < 60) {
+    return "Analysis has started.";
+  }
+
+  const minutes = Math.floor(elapsedSeconds / 60);
+
+  if (minutes === 1) {
+    return "Analysis has been running for about 1 minute.";
+  }
+
+  return `Analysis has been running for about ${minutes} minutes.`;
+}
+
+
+// ============================================================
+// PROCESSING MESSAGE
+// ============================================================
+
+function showProcessingStatus() {
+  const elapsed = elapsedMessage();
+
+  status(
+    "Analyzing your organization…\n\n" +
+    "✓ Your Module 00 information has been retrieved.\n" +
+    "✓ Secure AI analysis has started.\n" +
+    "⏳ Your Organization Intelligence Report is being prepared.\n\n" +
+    elapsed +
+    "\n\nThis analysis may take several minutes. " +
+    "You may leave this page and return later. " +
+    "Your results will be saved automatically.",
+    "processing"
+  );
+
+  setRunButtonProcessing(true);
+}
+
+
+// ============================================================
+// GET MODULE 01 RESULT
+// ============================================================
+
+async function getModule01Result() {
+  if (!project) return null;
+
+  const {
+    data,
+    error
+  } = await giSupabase
+    .from("module_results")
+    .select("*")
+    .eq("project_id", project.id)
+    .eq("module_number", 1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
+// ============================================================
+// EXTRACT SAVED ERROR MESSAGE
+// ============================================================
+
+function getSavedError(moduleResult) {
+  const output =
+    moduleResult?.output_data || {};
+
+  if (output.background_error) {
+    return output.background_error;
+  }
+
+  if (output.dify_error) {
+    return output.dify_error;
+  }
+
+  if (output.dify_http_error) {
+    if (
+      typeof output.dify_http_error === "string"
+    ) {
+      return output.dify_http_error;
+    }
+
+    return JSON.stringify(
+      output.dify_http_error
+    );
+  }
+
+  return "Module 01 could not be completed.";
+}
+
+
+// ============================================================
+// STOP POLLING
+// ============================================================
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
+
+// ============================================================
+// CHECK MODULE STATUS
+// ============================================================
+
+async function checkModule01Status() {
+  try {
+    const result =
+      await getModule01Result();
+
+    if (!result) {
       return;
     }
 
-    status('Calling secure Supabase → Dify Module 01 bridge…');
-    const {data,error}=await giSupabase.functions.invoke('run-module01',{
-      body:{project_id:project.id}
-    });
-    if(error)throw error;
-    if(data?.error)throw new Error(data.error+(data?.dify?` — ${JSON.stringify(data.dify)}`:''));
-    const report=data?.module_result?.report_text || 'Module 01 completed, but no report text was returned.';
-    $('report').textContent=report;
-    status('Module 01 completed in Dify and the result was saved to Supabase.','ok');
-  }catch(err){
-    console.error(err);
-    status('Module 01 failed: '+(err.message||err),'bad');
-  }finally{
-    $('runBtn').disabled=false;
-  }
-});
+    // --------------------------------------------------------
+    // RUNNING
+    // --------------------------------------------------------
 
-load().catch(err=>status('Unable to load Module 01: '+err.message,'bad'));
+    if (result.status === "running") {
+
+      if (
+        !processingStartedAt &&
+        result.started_at
+      ) {
+        processingStartedAt =
+          new Date(
+            result.started_at
+          ).getTime();
+      }
+
+      showProcessingStatus();
+
+      return;
+    }
+
+
+    // --------------------------------------------------------
+    // COMPLETED
+    // --------------------------------------------------------
+
+    if (result.status === "completed") {
+
+      stopPolling();
+
+      setRunButtonProcessing(false);
+
+      showReport(
+        result.report_text
+      );
+
+      status(
+        "✓ Module 01 complete.\n\n" +
+        "Your Organization Intelligence Report has been generated and saved to your Grant Intelligence account.",
+        "ok"
+      );
+
+      return;
+    }
+
+
+    // --------------------------------------------------------
+    // FAILED
+    // --------------------------------------------------------
+
+    if (result.status === "failed") {
+
+      stopPolling();
+
+      setRunButtonProcessing(false);
+
+      const message =
+        getSavedError(result);
+
+      status(
+        "Module 01 could not be completed.\n\n" +
+        message +
+        "\n\nYour Module 00 information is still safely stored. You may try again after the issue is corrected.",
+        "bad"
+      );
+
+      return;
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Module 01 status check failed:",
+      error
+    );
+
+    // Do not stop an active AI job just because
+    // one polling request failed.
+  }
+}
+
+
+// ============================================================
+// START POLLING
+// ============================================================
+
+function startPolling() {
+
+  stopPolling();
+
+  // Check immediately.
+  checkModule01Status();
+
+  // Then check every 10 seconds.
+  pollTimer = setInterval(
+    checkModule01Status,
+    10000
+  );
+}
+
+
+// ============================================================
+// LOAD PAGE
+// ============================================================
+
+async function load() {
+
+  // ----------------------------------------------------------
+  // SESSION
+  // ----------------------------------------------------------
+
+  session =
+    await GI.requireSession(
+      "module01.html"
+    );
+
+  if (!session) return;
+
+
+  // ----------------------------------------------------------
+  // PROFILE
+  // ----------------------------------------------------------
+
+  profile =
+    await GI.getProfile();
+
+  if (
+    !profile ||
+    ![
+      "demo",
+      "realtest",
+      "paid",
+      "admin"
+    ].includes(
+      profile.access_level
+    )
+  ) {
+    location.replace(
+      "unlock.html"
+    );
+
+    return;
+  }
+
+
+  // ----------------------------------------------------------
+  // MODE BADGE
+  // ----------------------------------------------------------
+
+  $("modePill").textContent =
+    profile.access_level === "demo"
+      ? "DEMO • NO DIFY"
+      : profile.access_level === "realtest"
+      ? "REAL TEST • DIFY"
+      : profile.access_level === "paid"
+      ? "PAID • DIFY"
+      : "ADMIN";
+
+
+  // ----------------------------------------------------------
+  // CURRENT PROJECT
+  // ----------------------------------------------------------
+
+  const projectId =
+    localStorage.getItem(
+      "giCurrentProjectId"
+    );
+
+  if (!projectId) {
+
+    $("projectInfo").textContent =
+      "No current project. Complete Module 00 first.";
+
+    $("runBtn").disabled = true;
+
+    return;
+  }
+
+
+  // ----------------------------------------------------------
+  // LOAD PROJECT
+  // ----------------------------------------------------------
+
+  const {
+    data,
+    error
+  } = await giSupabase
+    .from("projects")
+    .select("*")
+    .eq("id", projectId)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  project = data;
+
+
+  // ----------------------------------------------------------
+  // PROJECT DISPLAY
+  // ----------------------------------------------------------
+
+  $("projectInfo").innerHTML =
+    `<strong>${project.project_name}</strong><br>` +
+    `${project.organization_name || "No organization name yet"}<br>` +
+    `Stage: ${project.project_stage || "Not Found"}<br>` +
+    `Readiness: ${project.readiness_score ?? "Not Found"}`;
+
+
+  // ----------------------------------------------------------
+  // LOAD EXISTING MODULE 01 STATE
+  // ----------------------------------------------------------
+
+  const existing =
+    await getModule01Result();
+
+
+  // ----------------------------------------------------------
+  // COMPLETED REPORT EXISTS
+  // ----------------------------------------------------------
+
+  if (
+    existing?.status === "completed" &&
+    existing?.report_text
+  ) {
+
+    showReport(
+      existing.report_text
+    );
+
+    status(
+      "✓ A saved Module 01 report was loaded from Supabase.",
+      "ok"
+    );
+
+    setRunButtonProcessing(false);
+
+    return;
+  }
+
+
+  // ----------------------------------------------------------
+  // MODULE IS ALREADY RUNNING
+  // ----------------------------------------------------------
+
+  if (
+    existing?.status === "running"
+  ) {
+
+    if (existing.started_at) {
+      processingStartedAt =
+        new Date(
+          existing.started_at
+        ).getTime();
+    } else {
+      processingStartedAt =
+        Date.now();
+    }
+
+    showProcessingStatus();
+
+    startPolling();
+
+    return;
+  }
+
+
+  // ----------------------------------------------------------
+  // PREVIOUS RUN FAILED
+  // ----------------------------------------------------------
+
+  if (
+    existing?.status === "failed"
+  ) {
+
+    const message =
+      getSavedError(existing);
+
+    status(
+      "The previous Module 01 attempt did not complete.\n\n" +
+      message +
+      "\n\nYour Module 00 information is still saved. You may run Module 01 again.",
+      "bad"
+    );
+
+    setRunButtonProcessing(false);
+
+    return;
+  }
+
+
+  // ----------------------------------------------------------
+  // READY
+  // ----------------------------------------------------------
+
+  status(
+    "Ready to generate your Organization Intelligence Report."
+  );
+
+  setRunButtonProcessing(false);
+}
+
+
+// ============================================================
+// RUN MODULE 01
+// ============================================================
+
+async function runModule01() {
+
+  try {
+
+    if (!project) {
+      return;
+    }
+
+    // Prevent double-click.
+    setRunButtonProcessing(true);
+
+
+    // --------------------------------------------------------
+    // DEMO MODE
+    // --------------------------------------------------------
+
+    if (
+      profile.access_level ===
+      "demo"
+    ) {
+
+      status(
+        "Demo mode: loading sample report. No Dify credits are used."
+      );
+
+      const {
+        error
+      } = await giSupabase
+        .from("module_results")
+        .upsert(
+          {
+            user_id:
+              session.user.id,
+
+            project_id:
+              project.id,
+
+            module_number:
+              1,
+
+            module_name:
+              "Organization Intelligence",
+
+            status:
+              "completed",
+
+            report_text:
+              DEMO_REPORT,
+
+            output_data: {
+              sample: true,
+              source:
+                "static_demo"
+            },
+
+            completed_at:
+              new Date()
+                .toISOString(),
+
+            updated_at:
+              new Date()
+                .toISOString()
+          },
+          {
+            onConflict:
+              "project_id,module_number"
+          }
+        );
+
+      if (error) {
+        throw error;
+      }
+
+      showReport(
+        DEMO_REPORT
+      );
+
+      status(
+        "✓ Demo Module 01 completed and saved to Supabase. Dify was not called.",
+        "ok"
+      );
+
+      setRunButtonProcessing(false);
+
+      return;
+    }
+
+
+    // --------------------------------------------------------
+    // REAL TEST / PAID / ADMIN
+    // --------------------------------------------------------
+
+    processingStartedAt =
+      Date.now();
+
+    showProcessingStatus();
+
+
+    const {
+      data,
+      error
+    } = await giSupabase
+      .functions
+      .invoke(
+        "run-module01",
+        {
+          body: {
+            project_id:
+              project.id
+          }
+        }
+      );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    if (data?.error) {
+      throw new Error(
+        data.error
+      );
+    }
+
+
+    // --------------------------------------------------------
+    // ASYNC JOB ACCEPTED
+    // --------------------------------------------------------
+
+    if (
+      data?.status === "running"
+    ) {
+
+      showProcessingStatus();
+
+      startPolling();
+
+      return;
+    }
+
+
+    throw new Error(
+      "Module 01 did not return a valid processing status."
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Module 01 launcher error:",
+      error
+    );
+
+    stopPolling();
+
+    setRunButtonProcessing(false);
+
+    status(
+      "Unable to start Module 01: " +
+      (
+        error?.message ||
+        String(error)
+      ),
+      "bad"
+    );
+  }
+}
+
+
+// ============================================================
+// BUTTON EVENT
+// ============================================================
+
+function attachModule01Events() {
+
+  const button =
+    $("runBtn");
+
+  if (!button) {
+    console.error(
+      "Run Module 01 button was not found."
+    );
+
+    return;
+  }
+
+  button.addEventListener(
+    "click",
+    runModule01
+  );
+}
+
+
+// ============================================================
+// PAGE INITIALIZATION
+// ============================================================
+
+document.addEventListener(
+  "DOMContentLoaded",
+  async () => {
+
+    try {
+
+      attachModule01Events();
+
+      await load();
+
+    } catch (error) {
+
+      console.error(
+        "Unable to load Module 01:",
+        error
+      );
+
+      status(
+        "Unable to load Module 01: " +
+        (
+          error?.message ||
+          String(error)
+        ),
+        "bad"
+      );
+    }
+  }
+);
+
+
+// ============================================================
+// CLEAN UP POLLING WHEN PAGE CLOSES
+// ============================================================
+
+window.addEventListener(
+  "beforeunload",
+  () => {
+    stopPolling();
+  }
+);
