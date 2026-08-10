@@ -16,11 +16,6 @@ let project = null;
 let pollTimer = null;
 let processingStartedAt = null;
 
-
-// ============================================================
-// DEMO REPORT
-// ============================================================
-
 const DEMO_REPORT = `# GRANT INTELLIGENCE™
 
 ## Module 01 – Organization Intelligence (DEMO SAMPLE)
@@ -47,47 +42,25 @@ Priority Development Areas:
 Recommended Next Step:
 Proceed to Grant Readiness after converting the idea into a documented organization/project profile.`;
 
-
-// ============================================================
-// STATUS DISPLAY
-// ============================================================
-
 function status(message, kind = "") {
   const box = $("runStatus");
-
   if (!box) return;
-
   box.textContent = message;
   box.className = "statusbox " + kind;
 }
 
-
-// ============================================================
-// BUTTON STATE
-// ============================================================
-
 function setRunButtonProcessing(isProcessing) {
   const button = $("runBtn");
-
   if (!button) return;
 
   button.disabled = isProcessing;
-
-  if (isProcessing) {
-    button.textContent = "Module 01 Processing…";
-  } else {
-    button.textContent = "Run Module 01";
-  }
+  button.textContent = isProcessing
+    ? "Module 01 Processing…"
+    : "Run Module 01";
 }
-
-
-// ============================================================
-// REPORT DISPLAY
-// ============================================================
 
 function showReport(reportText) {
   const report = $("report");
-
   if (!report) return;
 
   report.textContent =
@@ -95,15 +68,8 @@ function showReport(reportText) {
     "Module 01 completed, but no report text was returned.";
 }
 
-
-// ============================================================
-// FRIENDLY ELAPSED TIME
-// ============================================================
-
 function elapsedMessage() {
-  if (!processingStartedAt) {
-    return "";
-  }
+  if (!processingStartedAt) return "";
 
   const elapsedSeconds = Math.floor(
     (Date.now() - processingStartedAt) / 1000
@@ -115,69 +81,43 @@ function elapsedMessage() {
 
   const minutes = Math.floor(elapsedSeconds / 60);
 
-  if (minutes === 1) {
-    return "Analysis has been running for about 1 minute.";
-  }
-
-  return `Analysis has been running for about ${minutes} minutes.`;
+  return minutes === 1
+    ? "Analysis has been running for about 1 minute."
+    : `Analysis has been running for about ${minutes} minutes.`;
 }
 
-
-// ============================================================
-// PROCESSING MESSAGE
-// ============================================================
-
 function showProcessingStatus() {
-  const elapsed = elapsedMessage();
-
   status(
     "Analyzing your organization…\n\n" +
-    "✓ Your Module 00 information has been retrieved.\n" +
-    "✓ Secure AI analysis has started.\n" +
-    "⏳ Your Organization Intelligence Report is being prepared.\n\n" +
-    elapsed +
-    "\n\nThis analysis may take several minutes. " +
-    "You may leave this page and return later. " +
-    "Your results will be saved automatically.",
+      "✓ Your Module 00 information has been retrieved.\n" +
+      "✓ Secure AI analysis has started.\n" +
+      "⏳ Your Organization Intelligence Report is being prepared.\n\n" +
+      elapsedMessage() +
+      "\n\nThis analysis may take several minutes. " +
+      "You may leave this page and return later. " +
+      "Your results will be saved automatically.",
     "processing"
   );
 
   setRunButtonProcessing(true);
 }
 
-
-// ============================================================
-// GET MODULE 01 RESULT
-// ============================================================
-
 async function getModule01Result() {
   if (!project) return null;
 
-  const {
-    data,
-    error
-  } = await giSupabase
+  const { data, error } = await giSupabase
     .from("module_results")
     .select("*")
     .eq("project_id", project.id)
     .eq("module_number", 1)
     .maybeSingle();
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data;
 }
 
-
-// ============================================================
-// EXTRACT SAVED ERROR MESSAGE
-// ============================================================
-
 function getSavedError(moduleResult) {
-  const output =
-    moduleResult?.output_data || {};
+  const output = moduleResult?.output_data || {};
 
   if (output.background_error) {
     return output.background_error;
@@ -188,24 +128,15 @@ function getSavedError(moduleResult) {
   }
 
   if (output.dify_http_error) {
-    if (
-      typeof output.dify_http_error === "string"
-    ) {
+    if (typeof output.dify_http_error === "string") {
       return output.dify_http_error;
     }
 
-    return JSON.stringify(
-      output.dify_http_error
-    );
+    return JSON.stringify(output.dify_http_error);
   }
 
   return "Module 01 could not be completed.";
 }
-
-
-// ============================================================
-// STOP POLLING
-// ============================================================
 
 function stopPolling() {
   if (pollTimer) {
@@ -214,168 +145,84 @@ function stopPolling() {
   }
 }
 
-
-// ============================================================
-// CHECK MODULE STATUS
-// ============================================================
-
 async function checkModule01Status() {
   try {
-    const result =
-      await getModule01Result();
+    const result = await getModule01Result();
 
-    if (!result) {
-      return;
-    }
-
-    // --------------------------------------------------------
-    // RUNNING
-    // --------------------------------------------------------
+    if (!result) return;
 
     if (result.status === "running") {
-
-      if (
-        !processingStartedAt &&
-        result.started_at
-      ) {
+      if (!processingStartedAt && result.started_at) {
         processingStartedAt =
-          new Date(
-            result.started_at
-          ).getTime();
+          new Date(result.started_at).getTime();
       }
 
       showProcessingStatus();
-
       return;
     }
 
-
-    // --------------------------------------------------------
-    // COMPLETED
-    // --------------------------------------------------------
-
     if (result.status === "completed") {
-
       stopPolling();
-
       setRunButtonProcessing(false);
-
-      showReport(
-        result.report_text
-      );
+      showReport(result.report_text);
 
       status(
         "✓ Module 01 complete.\n\n" +
-        "Your Organization Intelligence Report has been generated and saved to your Grant Intelligence account.",
+          "Your Organization Intelligence Report has been generated and saved to your Grant Intelligence account.",
         "ok"
       );
 
       return;
     }
 
-
-    // --------------------------------------------------------
-    // FAILED
-    // --------------------------------------------------------
-
     if (result.status === "failed") {
-
       stopPolling();
-
       setRunButtonProcessing(false);
 
-      const message =
-        getSavedError(result);
+      const message = getSavedError(result);
 
       status(
         "Module 01 could not be completed.\n\n" +
-        message +
-        "\n\nYour Module 00 information is still safely stored. You may try again after the issue is corrected.",
+          message +
+          "\n\nYour Module 00 information is still safely stored. You may try again after the issue is corrected.",
         "bad"
       );
-
-      return;
     }
-
   } catch (error) {
-
     console.error(
       "Module 01 status check failed:",
       error
     );
-
-    // Do not stop an active AI job just because
-    // one polling request failed.
+    // Keep polling. A single failed status check should not stop the AI job.
   }
 }
 
-
-// ============================================================
-// START POLLING
-// ============================================================
-
 function startPolling() {
-
   stopPolling();
 
-  // Check immediately.
   checkModule01Status();
 
-  // Then check every 10 seconds.
   pollTimer = setInterval(
     checkModule01Status,
     10000
   );
 }
 
-
-// ============================================================
-// LOAD PAGE
-// ============================================================
-
 async function load() {
-
-  // ----------------------------------------------------------
-  // SESSION
-  // ----------------------------------------------------------
-
-  session =
-    await GI.requireSession(
-      "module01.html"
-    );
-
+  session = await GI.requireSession("module01.html");
   if (!session) return;
 
-
-  // ----------------------------------------------------------
-  // PROFILE
-  // ----------------------------------------------------------
-
-  profile =
-    await GI.getProfile();
+  profile = await GI.getProfile();
 
   if (
     !profile ||
-    ![
-      "demo",
-      "realtest",
-      "paid",
-      "admin"
-    ].includes(
+    !["demo", "realtest", "paid", "admin"].includes(
       profile.access_level
     )
   ) {
-    location.replace(
-      "unlock.html"
-    );
-
+    location.replace("unlock.html");
     return;
   }
-
-
-  // ----------------------------------------------------------
-  // MODE BADGE
-  // ----------------------------------------------------------
 
   $("modePill").textContent =
     profile.access_level === "demo"
@@ -386,50 +233,26 @@ async function load() {
       ? "PAID • DIFY"
       : "ADMIN";
 
-
-  // ----------------------------------------------------------
-  // CURRENT PROJECT
-  // ----------------------------------------------------------
-
-  const projectId =
-    localStorage.getItem(
-      "giCurrentProjectId"
-    );
+  const projectId = localStorage.getItem(
+    "giCurrentProjectId"
+  );
 
   if (!projectId) {
-
     $("projectInfo").textContent =
       "No current project. Complete Module 00 first.";
-
     $("runBtn").disabled = true;
-
     return;
   }
 
-
-  // ----------------------------------------------------------
-  // LOAD PROJECT
-  // ----------------------------------------------------------
-
-  const {
-    data,
-    error
-  } = await giSupabase
+  const { data, error } = await giSupabase
     .from("projects")
     .select("*")
     .eq("id", projectId)
     .single();
 
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
 
   project = data;
-
-
-  // ----------------------------------------------------------
-  // PROJECT DISPLAY
-  // ----------------------------------------------------------
 
   $("projectInfo").innerHTML =
     `<strong>${project.project_name}</strong><br>` +
@@ -437,27 +260,13 @@ async function load() {
     `Stage: ${project.project_stage || "Not Found"}<br>` +
     `Readiness: ${project.readiness_score ?? "Not Found"}`;
 
-
-  // ----------------------------------------------------------
-  // LOAD EXISTING MODULE 01 STATE
-  // ----------------------------------------------------------
-
-  const existing =
-    await getModule01Result();
-
-
-  // ----------------------------------------------------------
-  // COMPLETED REPORT EXISTS
-  // ----------------------------------------------------------
+  const existing = await getModule01Result();
 
   if (
     existing?.status === "completed" &&
     existing?.report_text
   ) {
-
-    showReport(
-      existing.report_text
-    );
+    showReport(existing.report_text);
 
     status(
       "✓ A saved Module 01 report was loaded from Supabase.",
@@ -465,64 +274,32 @@ async function load() {
     );
 
     setRunButtonProcessing(false);
-
     return;
   }
 
-
-  // ----------------------------------------------------------
-  // MODULE IS ALREADY RUNNING
-  // ----------------------------------------------------------
-
-  if (
-    existing?.status === "running"
-  ) {
-
-    if (existing.started_at) {
-      processingStartedAt =
-        new Date(
-          existing.started_at
-        ).getTime();
-    } else {
-      processingStartedAt =
-        Date.now();
-    }
+  if (existing?.status === "running") {
+    processingStartedAt = existing.started_at
+      ? new Date(existing.started_at).getTime()
+      : Date.now();
 
     showProcessingStatus();
-
     startPolling();
-
     return;
   }
 
-
-  // ----------------------------------------------------------
-  // PREVIOUS RUN FAILED
-  // ----------------------------------------------------------
-
-  if (
-    existing?.status === "failed"
-  ) {
-
-    const message =
-      getSavedError(existing);
+  if (existing?.status === "failed") {
+    const message = getSavedError(existing);
 
     status(
       "The previous Module 01 attempt did not complete.\n\n" +
-      message +
-      "\n\nYour Module 00 information is still saved. You may run Module 01 again.",
+        message +
+        "\n\nYour Module 00 information is still saved. You may run Module 01 again.",
       "bad"
     );
 
     setRunButtonProcessing(false);
-
     return;
   }
-
-
-  // ----------------------------------------------------------
-  // READY
-  // ----------------------------------------------------------
 
   status(
     "Ready to generate your Organization Intelligence Report."
@@ -531,87 +308,42 @@ async function load() {
   setRunButtonProcessing(false);
 }
 
-
-// ============================================================
-// RUN MODULE 01
-// ============================================================
-
 async function runModule01() {
-
   try {
+    if (!project) return;
 
-    if (!project) {
-      return;
-    }
-
-    // Prevent double-click.
     setRunButtonProcessing(true);
 
-
-    // --------------------------------------------------------
-    // DEMO MODE
-    // --------------------------------------------------------
-
-    if (
-      profile.access_level ===
-      "demo"
-    ) {
-
+    if (profile.access_level === "demo") {
       status(
         "Demo mode: loading sample report. No Dify credits are used."
       );
 
-      const {
-        error
-      } = await giSupabase
+      const { error } = await giSupabase
         .from("module_results")
         .upsert(
           {
-            user_id:
-              session.user.id,
-
-            project_id:
-              project.id,
-
-            module_number:
-              1,
-
-            module_name:
-              "Organization Intelligence",
-
-            status:
-              "completed",
-
-            report_text:
-              DEMO_REPORT,
-
+            user_id: session.user.id,
+            project_id: project.id,
+            module_number: 1,
+            module_name: "Organization Intelligence",
+            status: "completed",
+            report_text: DEMO_REPORT,
             output_data: {
               sample: true,
-              source:
-                "static_demo"
+              source: "static_demo"
             },
-
-            completed_at:
-              new Date()
-                .toISOString(),
-
-            updated_at:
-              new Date()
-                .toISOString()
+            completed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           },
           {
-            onConflict:
-              "project_id,module_number"
+            onConflict: "project_id,module_number"
           }
         );
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      showReport(
-        DEMO_REPORT
-      );
+      showReport(DEMO_REPORT);
 
       status(
         "✓ Demo Module 01 completed and saved to Supabase. Dify was not called.",
@@ -619,106 +351,61 @@ async function runModule01() {
       );
 
       setRunButtonProcessing(false);
-
       return;
     }
 
-
-    // --------------------------------------------------------
-    // REAL TEST / PAID / ADMIN
-    // --------------------------------------------------------
-
-    processingStartedAt =
-      Date.now();
-
+    processingStartedAt = Date.now();
     showProcessingStatus();
 
-
-    const {
-      data,
-      error
-    } = await giSupabase
-      .functions
-      .invoke(
+    const { data, error } =
+      await giSupabase.functions.invoke(
         "run-module01",
         {
           body: {
-            project_id:
-              project.id
+            project_id: project.id
           }
         }
       );
 
-
-    if (error) {
-      throw error;
-    }
-
+    if (error) throw error;
 
     if (data?.error) {
-      throw new Error(
-        data.error
-      );
+      throw new Error(data.error);
     }
 
-
-    // --------------------------------------------------------
-    // ASYNC JOB ACCEPTED
-    // --------------------------------------------------------
-
-    if (
-      data?.status === "running"
-    ) {
-
+    if (data?.status === "running") {
       showProcessingStatus();
-
       startPolling();
-
       return;
     }
-
 
     throw new Error(
       "Module 01 did not return a valid processing status."
     );
-
   } catch (error) {
-
     console.error(
       "Module 01 launcher error:",
       error
     );
 
     stopPolling();
-
     setRunButtonProcessing(false);
 
     status(
       "Unable to start Module 01: " +
-      (
-        error?.message ||
-        String(error)
-      ),
+        (error?.message || String(error)),
       "bad"
     );
   }
 }
 
-
-// ============================================================
-// BUTTON EVENT
-// ============================================================
-
 function attachModule01Events() {
-
-  const button =
-    $("runBtn");
+  const button = $("runBtn");
 
   if (!button) {
     console.error(
       "Run Module 01 button was not found."
     );
-
     return;
   }
 
@@ -728,23 +415,13 @@ function attachModule01Events() {
   );
 }
 
-
-// ============================================================
-// PAGE INITIALIZATION
-// ============================================================
-
 document.addEventListener(
   "DOMContentLoaded",
   async () => {
-
     try {
-
       attachModule01Events();
-
       await load();
-
     } catch (error) {
-
       console.error(
         "Unable to load Module 01:",
         error
@@ -752,20 +429,12 @@ document.addEventListener(
 
       status(
         "Unable to load Module 01: " +
-        (
-          error?.message ||
-          String(error)
-        ),
+          (error?.message || String(error)),
         "bad"
       );
     }
   }
 );
-
-
-// ============================================================
-// CLEAN UP POLLING WHEN PAGE CLOSES
-// ============================================================
 
 window.addEventListener(
   "beforeunload",
