@@ -1,35 +1,65 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Organization Intelligence — Grant Intelligence™</title>
 <link rel="stylesheet" href="styles.css">
 <style>
-.m1-shell{width:min(1160px,92vw);margin:32px auto 70px}.m1-top{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:22px}.m1-grid{display:grid;grid-template-columns:.72fr 1.28fr;gap:20px}.m1-card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:24px}.mode-pill{display:inline-flex;padding:7px 11px;border-radius:999px;background:rgba(52,213,255,.1);border:1px solid rgba(52,213,255,.3);font-weight:850;color:#b7f1ff}.m1-report{white-space:pre-wrap;line-height:1.62;max-height:67vh;overflow:auto;background:#071522;border:1px solid rgba(255,255,255,.09);padding:20px;border-radius:15px;color:#dce8f1}.m1-actions{display:grid;gap:10px;margin-top:18px}.statusbox{white-space:pre-wrap;padding:13px 15px;border-radius:13px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.1);color:#aebdca}.statusbox.ok{border-color:rgba(81,211,154,.32);color:#a3f0c5}.statusbox.bad{border-color:rgba(255,125,125,.3);color:#ffb0b0}.statusbox.processing{border-color:rgba(52,213,255,.35);color:#b7f1ff;background:rgba(52,213,255,.055)}.btnx{border:0;border-radius:12px;padding:13px 16px;background:linear-gradient(135deg,#34d5ff,#4f7cff);font-weight:900;color:#03111c;cursor:pointer}.btnx:disabled{opacity:.55;cursor:not-allowed}.linkx{color:#8de9ff;text-decoration:none}@media(max-width:780px){.m1-grid{grid-template-columns:1fr}}
+.m1-shell{width:min(1160px,92vw);margin:32px auto 70px}
+.m1-top{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:22px}
+.m1-grid{display:grid;grid-template-columns:.72fr 1.28fr;gap:20px}
+.m1-card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:24px}
+.mode-pill{display:inline-flex;padding:7px 11px;border-radius:999px;background:rgba(52,213,255,.1);border:1px solid rgba(52,213,255,.3);font-weight:850;color:#b7f1ff}
+.m1-report{white-space:pre-wrap;line-height:1.62;max-height:67vh;overflow:auto;background:#071522;border:1px solid rgba(255,255,255,.09);padding:20px;border-radius:15px;color:#dce8f1}
+.m1-actions{display:grid;gap:10px;margin-top:18px}
+.statusbox{white-space:pre-wrap;padding:13px 15px;border-radius:13px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.1);color:#aebdca}
+.statusbox.ok{border-color:rgba(81,211,154,.32);color:#a3f0c5}
+.statusbox.bad{border-color:rgba(255,125,125,.3);color:#ffb0b0}
+.statusbox.processing{border-color:rgba(52,213,255,.35);color:#b7f1ff;background:rgba(52,213,255,.055)}
+.btnx{border:0;border-radius:12px;padding:13px 16px;background:linear-gradient(135deg,#34d5ff,#4f7cff);font-weight:900;color:#03111c;cursor:pointer}
+.btnx:disabled{opacity:.55;cursor:not-allowed}
+.linkx{color:#8de9ff;text-decoration:none}
+@media(max-width:780px){.m1-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="m1-shell">
-  <div class="m1-top"><div><a class="linkx" href="workspace.html">← Workspace</a><h1 style="margin:.4rem 0 0">Organization Intelligence</h1><p style="color:#9fb0c0">Module 01</p></div><span class="mode-pill" id="modePill">Loading…</span></div>
+  <div class="m1-top">
+    <div>
+      <a class="linkx" href="workspace.html">← Workspace</a>
+      <h1 style="margin:.4rem 0 0">Organization Intelligence</h1>
+      <p style="color:#9fb0c0">Module 01</p>
+    </div>
+    <span class="mode-pill" id="modePill">Loading…</span>
+  </div>
+
   <div class="m1-grid">
     <section class="m1-card">
       <h2>Project Input</h2>
       <div id="projectInfo" class="statusbox">Loading your Supabase project…</div>
+
       <div class="m1-actions">
-        <button id="runBtn" class="btnx">Run Module 01</button>
+        <button id="runBtn" class="btnx" type="button">Run Module 01</button>
         <div id="runStatus" class="statusbox">Waiting.</div>
       </div>
+
       <p style="color:#879caf;font-size:.88rem;margin-top:18px">
-        Demo accounts load sample output without Dify. Real Test and Paid accounts call the secure Supabase Edge Function, which keeps the Dify API key out of GitHub.
+        Real Test and Paid accounts securely start Module 01 through Supabase.
+        The page then checks the separate Module 01 status service while Dify processes the report.
+        You may leave and return without intentionally starting a second run.
       </p>
     </section>
+
     <section class="m1-card">
       <h2>Organization Intelligence Report</h2>
       <div id="report" class="m1-report">No Module 01 report has been generated yet.</div>
     </section>
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
-<script src="module01.js?v=7.6-async"></script>
-</body></html>
+<script src="module01.js?v=7.7-two-function"></script>
+</body>
+</html>

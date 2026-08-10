@@ -1,11 +1,14 @@
 // Grant Intelligence™
 // Module 01 — Organization Intelligence
-// Async website controller
+// v7.7 client for the two-function Supabase architecture:
 //
-// Website -> run-module01 launcher
-//         -> immediate Processing status
-//         -> polls Supabase module_results
-//         -> displays report when completed
+//   module01.js
+//      -> run-module01   (starts/records the Dify workflow)
+//      -> check-module01 (checks status and finalizes/saves result)
+//
+// This client is deliberately tolerant of several compatible response
+// field names so it can work with the v7.7 Edge Functions without
+// exposing any Dify secret in GitHub.
 
 const $ = (id) => document.getElementById(id);
 
@@ -15,6 +18,9 @@ let project = null;
 
 let pollTimer = null;
 let processingStartedAt = null;
+let activeRunId = null;
+
+const POLL_INTERVAL_MS = 10000;
 
 const DEMO_REPORT = `# GRANT INTELLIGENCE™
 
@@ -59,50 +65,163 @@ function setRunButtonProcessing(isProcessing) {
     : "Run Module 01";
 }
 
-function showReport(reportText) {
+function showReport(text) {
   const report = $("report");
   if (!report) return;
 
   report.textContent =
-    reportText ||
+    text ||
     "Module 01 completed, but no report text was returned.";
 }
 
 function elapsedMessage() {
-  if (!processingStartedAt) return "";
+  if (!processingStartedAt) return "Analysis has started.";
 
-  const elapsedSeconds = Math.floor(
-    (Date.now() - processingStartedAt) / 1000
+  const seconds = Math.max(
+    0,
+    Math.floor((Date.now() - processingStartedAt) / 1000)
   );
 
-  if (elapsedSeconds < 60) {
-    return "Analysis has started.";
-  }
+  if (seconds < 60) return "Analysis has started.";
 
-  const minutes = Math.floor(elapsedSeconds / 60);
-
+  const minutes = Math.floor(seconds / 60);
   return minutes === 1
     ? "Analysis has been running for about 1 minute."
     : `Analysis has been running for about ${minutes} minutes.`;
 }
 
-function showProcessingStatus() {
+function showProcessingStatus(extra = "") {
+  const optional =
+    extra ? `\n${extra}` : "";
+
   status(
     "Analyzing your organization…\n\n" +
       "✓ Your Module 00 information has been retrieved.\n" +
-      "✓ Secure AI analysis has started.\n" +
+      "✓ Secure AI processing has been started.\n" +
       "⏳ Your Organization Intelligence Report is being prepared.\n\n" +
       elapsedMessage() +
-      "\n\nThis analysis may take several minutes. " +
-      "You may leave this page and return later. " +
-      "Your results will be saved automatically.",
+      optional +
+      "\n\nYou may leave this page and return later. " +
+      "Your results will remain associated with this project.",
     "processing"
   );
 
   setRunButtonProcessing(true);
 }
 
-async function getModule01Result() {
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
+function rememberRunId(value) {
+  if (!value) return;
+
+  activeRunId = String(value);
+  localStorage.setItem(
+    `giModule01RunId:${project?.id || "unknown"}`,
+    activeRunId
+  );
+}
+
+function restoreRunId() {
+  if (!project) return null;
+
+  const value = localStorage.getItem(
+    `giModule01RunId:${project.id}`
+  );
+
+  if (value) activeRunId = value;
+  return activeRunId;
+}
+
+function forgetRunId() {
+  if (project) {
+    localStorage.removeItem(
+      `giModule01RunId:${project.id}`
+    );
+  }
+  activeRunId = null;
+}
+
+function extractRunId(data) {
+  return (
+    data?.workflow_run_id ||
+    data?.dify_run_id ||
+    data?.run_id ||
+    data?.module_result?.dify_run_id ||
+    data?.data?.workflow_run_id ||
+    data?.data?.id ||
+    null
+  );
+}
+
+function normalizeStatus(data) {
+  const raw =
+    data?.status ||
+    data?.module_result?.status ||
+    data?.data?.status ||
+    data?.dify_status ||
+    "";
+
+  const value = String(raw).toLowerCase();
+
+  if (
+    ["running", "processing", "started", "queued", "pending"].includes(value)
+  ) {
+    return "running";
+  }
+
+  if (
+    ["completed", "complete", "succeeded", "success", "finished"].includes(value)
+  ) {
+    return "completed";
+  }
+
+  if (
+    ["failed", "error", "stopped", "cancelled", "canceled"].includes(value)
+  ) {
+    return "failed";
+  }
+
+  return value;
+}
+
+function extractReport(data) {
+  return (
+    data?.report_text ||
+    data?.module_result?.report_text ||
+    data?.report ||
+    data?.outputs?.organizationIntelligenceReport ||
+    data?.data?.outputs?.organizationIntelligenceReport ||
+    data?.organizationIntelligenceReport ||
+    ""
+  );
+}
+
+function extractError(data) {
+  const possible =
+    data?.error ||
+    data?.message ||
+    data?.dify_error ||
+    data?.module_result?.output_data?.dify_error ||
+    data?.module_result?.output_data?.background_error ||
+    data?.output_data?.dify_error ||
+    data?.output_data?.background_error ||
+    data?.data?.error;
+
+  if (!possible) {
+    return "Module 01 could not be completed.";
+  }
+
+  return typeof possible === "string"
+    ? possible
+    : JSON.stringify(possible);
+}
+
+async function getSavedModule01() {
   if (!project) return null;
 
   const { data, error } = await giSupabase
@@ -116,96 +235,164 @@ async function getModule01Result() {
   return data;
 }
 
-function getSavedError(moduleResult) {
-  const output = moduleResult?.output_data || {};
+function renderSavedResult(saved) {
+  if (!saved) return false;
 
-  if (output.background_error) {
-    return output.background_error;
+  if (saved.dify_run_id) {
+    rememberRunId(saved.dify_run_id);
   }
 
-  if (output.dify_error) {
-    return output.dify_error;
-  }
+  if (saved.status === "completed" && saved.report_text) {
+    stopPolling();
+    forgetRunId();
+    showReport(saved.report_text);
+    setRunButtonProcessing(false);
 
-  if (output.dify_http_error) {
-    if (typeof output.dify_http_error === "string") {
-      return output.dify_http_error;
-    }
-
-    return JSON.stringify(output.dify_http_error);
-  }
-
-  return "Module 01 could not be completed.";
-}
-
-function stopPolling() {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
-}
-
-async function checkModule01Status() {
-  try {
-    const result = await getModule01Result();
-
-    if (!result) return;
-
-    if (result.status === "running") {
-      if (!processingStartedAt && result.started_at) {
-        processingStartedAt =
-          new Date(result.started_at).getTime();
-      }
-
-      showProcessingStatus();
-      return;
-    }
-
-    if (result.status === "completed") {
-      stopPolling();
-      setRunButtonProcessing(false);
-      showReport(result.report_text);
-
-      status(
-        "✓ Module 01 complete.\n\n" +
-          "Your Organization Intelligence Report has been generated and saved to your Grant Intelligence account.",
-        "ok"
-      );
-
-      return;
-    }
-
-    if (result.status === "failed") {
-      stopPolling();
-      setRunButtonProcessing(false);
-
-      const message = getSavedError(result);
-
-      status(
-        "Module 01 could not be completed.\n\n" +
-          message +
-          "\n\nYour Module 00 information is still safely stored. You may try again after the issue is corrected.",
-        "bad"
-      );
-    }
-  } catch (error) {
-    console.error(
-      "Module 01 status check failed:",
-      error
+    status(
+      "✓ Module 01 complete.\n\n" +
+        "Your Organization Intelligence Report has been generated and saved to your Grant Intelligence account.",
+      "ok"
     );
-    // Keep polling. A single failed status check should not stop the AI job.
+
+    return true;
   }
+
+  if (saved.status === "running") {
+    if (saved.started_at) {
+      processingStartedAt =
+        new Date(saved.started_at).getTime();
+    }
+    showProcessingStatus();
+    return true;
+  }
+
+  if (saved.status === "failed") {
+    stopPolling();
+    setRunButtonProcessing(false);
+
+    const message =
+      saved.output_data?.dify_error ||
+      saved.output_data?.background_error ||
+      saved.output_data?.error ||
+      "The previous Module 01 attempt did not complete.";
+
+    status(
+      "The previous Module 01 attempt did not complete.\n\n" +
+        (typeof message === "string"
+          ? message
+          : JSON.stringify(message)) +
+        "\n\nYour Module 00 information is still saved. You may run Module 01 again.",
+      "bad"
+    );
+
+    return true;
+  }
+
+  return false;
+}
+
+async function invokeCheckModule01() {
+  if (!project) return;
+
+  const checkBody = {
+    project_id: project.id
+  };
+
+  // Supplying the run ID under the common v7.7 field names is harmless
+  // if the Edge Function only uses project_id, and useful if it expects one.
+  if (activeRunId) {
+    checkBody.workflow_run_id = activeRunId;
+    checkBody.dify_run_id = activeRunId;
+    checkBody.run_id = activeRunId;
+  }
+
+  const { data, error } =
+    await giSupabase.functions.invoke(
+      "check-module01",
+      { body: checkBody }
+    );
+
+  if (error) {
+    // A status-check failure must not start another Dify run.
+    console.warn("check-module01 invocation failed:", error);
+
+    // Fall back to the saved Supabase row so page recovery still works.
+    const saved = await getSavedModule01();
+    if (saved) renderSavedResult(saved);
+    return;
+  }
+
+  const newRunId = extractRunId(data);
+  if (newRunId) rememberRunId(newRunId);
+
+  const state = normalizeStatus(data);
+
+  if (state === "completed") {
+    // check-module01 should save the finalized result. Prefer the response,
+    // then read the saved row to guarantee the website displays persisted data.
+    let report = extractReport(data);
+
+    const saved = await getSavedModule01();
+    if (saved?.report_text) report = saved.report_text;
+
+    stopPolling();
+    forgetRunId();
+    setRunButtonProcessing(false);
+    showReport(report);
+
+    status(
+      "✓ Module 01 complete.\n\n" +
+        "Your Organization Intelligence Report has been generated and saved to your Grant Intelligence account.",
+      "ok"
+    );
+    return;
+  }
+
+  if (state === "failed") {
+    stopPolling();
+    setRunButtonProcessing(false);
+
+    status(
+      "Module 01 could not be completed.\n\n" +
+        extractError(data) +
+        "\n\nYour Module 00 information is still safely stored. You may try again after the issue is corrected.",
+      "bad"
+    );
+    return;
+  }
+
+  // If the checker returns no normalized status, use the database row.
+  const saved = await getSavedModule01();
+
+  if (saved?.status === "completed" && saved.report_text) {
+    renderSavedResult(saved);
+    return;
+  }
+
+  if (saved?.status === "failed") {
+    renderSavedResult(saved);
+    return;
+  }
+
+  showProcessingStatus(
+    state && state !== "running"
+      ? `Current processing status: ${state}`
+      : ""
+  );
 }
 
 function startPolling() {
   stopPolling();
 
-  checkModule01Status();
+  invokeCheckModule01().catch((error) => {
+    console.error("Initial check-module01 error:", error);
+  });
 
-  pollTimer = setInterval(
-    checkModule01Status,
-    10000
-  );
+  pollTimer = setInterval(() => {
+    invokeCheckModule01().catch((error) => {
+      console.error("check-module01 polling error:", error);
+    });
+  }, POLL_INTERVAL_MS);
 }
 
 async function load() {
@@ -233,9 +420,8 @@ async function load() {
       ? "PAID • DIFY"
       : "ADMIN";
 
-  const projectId = localStorage.getItem(
-    "giCurrentProjectId"
-  );
+  const projectId =
+    localStorage.getItem("giCurrentProjectId");
 
   if (!projectId) {
     $("projectInfo").textContent =
@@ -253,6 +439,7 @@ async function load() {
   if (error) throw error;
 
   project = data;
+  restoreRunId();
 
   $("projectInfo").innerHTML =
     `<strong>${project.project_name}</strong><br>` +
@@ -260,52 +447,75 @@ async function load() {
     `Stage: ${project.project_stage || "Not Found"}<br>` +
     `Readiness: ${project.readiness_score ?? "Not Found"}`;
 
-  const existing = await getModule01Result();
+  const saved = await getSavedModule01();
 
-  if (
-    existing?.status === "completed" &&
-    existing?.report_text
-  ) {
-    showReport(existing.report_text);
-
-    status(
-      "✓ A saved Module 01 report was loaded from Supabase.",
-      "ok"
-    );
-
-    setRunButtonProcessing(false);
+  if (saved?.status === "completed" && saved.report_text) {
+    renderSavedResult(saved);
     return;
   }
 
-  if (existing?.status === "running") {
-    processingStartedAt = existing.started_at
-      ? new Date(existing.started_at).getTime()
-      : Date.now();
-
-    showProcessingStatus();
+  if (saved?.status === "running") {
+    renderSavedResult(saved);
     startPolling();
     return;
   }
 
-  if (existing?.status === "failed") {
-    const message = getSavedError(existing);
+  if (saved?.status === "failed") {
+    renderSavedResult(saved);
+    return;
+  }
 
-    status(
-      "The previous Module 01 attempt did not complete.\n\n" +
-        message +
-        "\n\nYour Module 00 information is still saved. You may run Module 01 again.",
-      "bad"
-    );
-
-    setRunButtonProcessing(false);
+  // If a run ID survived a page refresh but the row is not yet finalized,
+  // resume status checking rather than starting another paid AI run.
+  if (activeRunId) {
+    processingStartedAt = Date.now();
+    showProcessingStatus("Reconnecting to your existing Module 01 run…");
+    startPolling();
     return;
   }
 
   status(
     "Ready to generate your Organization Intelligence Report."
   );
-
   setRunButtonProcessing(false);
+}
+
+async function runDemo() {
+  status(
+    "Demo mode: loading sample report. No Dify credits are used."
+  );
+
+  const { error } = await giSupabase
+    .from("module_results")
+    .upsert(
+      {
+        user_id: session.user.id,
+        project_id: project.id,
+        module_number: 1,
+        module_name: "Organization Intelligence",
+        status: "completed",
+        report_text: DEMO_REPORT,
+        output_data: {
+          sample: true,
+          source: "static_demo"
+        },
+        completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        onConflict: "project_id,module_number"
+      }
+    );
+
+  if (error) throw error;
+
+  showReport(DEMO_REPORT);
+  setRunButtonProcessing(false);
+
+  status(
+    "✓ Demo Module 01 completed and saved to Supabase. Dify was not called.",
+    "ok"
+  );
 }
 
 async function runModule01() {
@@ -315,47 +525,22 @@ async function runModule01() {
     setRunButtonProcessing(true);
 
     if (profile.access_level === "demo") {
-      status(
-        "Demo mode: loading sample report. No Dify credits are used."
-      );
+      await runDemo();
+      return;
+    }
 
-      const { error } = await giSupabase
-        .from("module_results")
-        .upsert(
-          {
-            user_id: session.user.id,
-            project_id: project.id,
-            module_number: 1,
-            module_name: "Organization Intelligence",
-            status: "completed",
-            report_text: DEMO_REPORT,
-            output_data: {
-              sample: true,
-              source: "static_demo"
-            },
-            completed_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          {
-            onConflict: "project_id,module_number"
-          }
-        );
+    // First check the DB so a double-click/page race cannot knowingly
+    // start a second paid run.
+    const savedBeforeStart = await getSavedModule01();
 
-      if (error) throw error;
-
-      showReport(DEMO_REPORT);
-
-      status(
-        "✓ Demo Module 01 completed and saved to Supabase. Dify was not called.",
-        "ok"
-      );
-
-      setRunButtonProcessing(false);
+    if (savedBeforeStart?.status === "running") {
+      renderSavedResult(savedBeforeStart);
+      startPolling();
       return;
     }
 
     processingStartedAt = Date.now();
-    showProcessingStatus();
+    showProcessingStatus("Starting secure Module 01 workflow…");
 
     const { data, error } =
       await giSupabase.functions.invoke(
@@ -368,31 +553,52 @@ async function runModule01() {
       );
 
     if (error) throw error;
+    if (data?.error) throw new Error(extractError(data));
 
-    if (data?.error) {
-      throw new Error(data.error);
+    const runId = extractRunId(data);
+    if (runId) rememberRunId(runId);
+
+    const state = normalizeStatus(data);
+
+    // v7.7 should return quickly after launching/recording the Dify run.
+    if (
+      state === "running" ||
+      data?.accepted === true ||
+      data?.success === true
+    ) {
+      showProcessingStatus();
+      startPolling();
+      return;
     }
 
-    if (data?.status === "running") {
+    if (state === "completed") {
+      await invokeCheckModule01();
+      return;
+    }
+
+    if (state === "failed") {
+      throw new Error(extractError(data));
+    }
+
+    // If the launcher returned a run ID, polling is still safe even if
+    // it used a different status label.
+    if (activeRunId) {
       showProcessingStatus();
       startPolling();
       return;
     }
 
     throw new Error(
-      "Module 01 did not return a valid processing status."
+      "run-module01 did not return a recognizable launch status or workflow run ID."
     );
   } catch (error) {
-    console.error(
-      "Module 01 launcher error:",
-      error
-    );
+    console.error("Module 01 launcher error:", error);
 
     stopPolling();
     setRunButtonProcessing(false);
 
     status(
-      "Unable to start Module 01: " +
+      "Unable to start Module 01.\n\n" +
         (error?.message || String(error)),
       "bad"
     );
@@ -403,16 +609,11 @@ function attachModule01Events() {
   const button = $("runBtn");
 
   if (!button) {
-    console.error(
-      "Run Module 01 button was not found."
-    );
+    console.error("Run Module 01 button was not found.");
     return;
   }
 
-  button.addEventListener(
-    "click",
-    runModule01
-  );
+  button.addEventListener("click", runModule01);
 }
 
 document.addEventListener(
@@ -422,10 +623,7 @@ document.addEventListener(
       attachModule01Events();
       await load();
     } catch (error) {
-      console.error(
-        "Unable to load Module 01:",
-        error
-      );
+      console.error("Unable to load Module 01:", error);
 
       status(
         "Unable to load Module 01: " +
@@ -436,9 +634,4 @@ document.addEventListener(
   }
 );
 
-window.addEventListener(
-  "beforeunload",
-  () => {
-    stopPolling();
-  }
-);
+window.addEventListener("beforeunload", stopPolling);
