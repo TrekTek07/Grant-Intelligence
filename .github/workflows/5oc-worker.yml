@@ -1,4 +1,4 @@
-name: 5OC Published Input Schema Diagnostic
+name: 5OC POST Boundary Diagnostic
 
 on:
   workflow_dispatch:
@@ -7,12 +7,12 @@ permissions:
   contents: read
 
 jobs:
-  inspect-published-schema:
+  test-post-boundary:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-      - name: Inspect published Dify Main input schema
+      - name: Test Dify POST boundary without valid 5OC inputs
         env:
           DIFY_5OC_API_KEY: ${{ secrets.DIFY_5OC_API_KEY }}
         run: |
@@ -24,21 +24,7 @@ jobs:
           import urllib.error
 
           API_KEY = os.environ.get("DIFY_5OC_API_KEY", "")
-          BASE = "https://api.dify.ai/v1"
-          PARAMETERS_URL = f"{BASE}/parameters"
-
-          EXPECTED_VARIABLES = [
-              "project_id",
-              "access_mode",
-              "source_mode",
-              "standalone_resume_text",
-              "standalone_resume_file",
-              "standalone_document_text",
-              "standalone_document_file",
-              "standalone_intake_notes",
-              "module00_source_data",
-              "module01_source_data",
-          ]
+          URL = "https://api.dify.ai/v1/workflows/run"
 
           if not API_KEY:
               raise RuntimeError(
@@ -46,45 +32,90 @@ jobs:
               )
 
           print("========================================")
-          print("5OC PUBLISHED INPUT SCHEMA DIAGNOSTIC")
+          print("5OC POST BOUNDARY DIAGNOSTIC")
           print("========================================")
-          print("GET /parameters: ENABLED")
-          print("POST /workflows/run: DISABLED")
-          print("Workflow execution: DISABLED")
+          print("Purpose:")
+          print(
+              "Test whether POST /workflows/run reaches "
+              "Dify instead of being blocked by Cloudflare."
+          )
+          print()
+          print("VALID 5OC INPUT PACKAGE: NOT PROVIDED")
+          print("Required access_mode: OMITTED")
+          print("Required source_mode: OMITTED")
+          print("Résumé upload ID: NOT PROVIDED")
+          print("Project ID: NOT PROVIDED")
           print("Supabase writes: DISABLED")
-          print("Dify file upload: DISABLED")
+          print("Automatic retry: DISABLED")
           print("----------------------------------------")
 
+          # Intentionally invalid workflow request.
+          #
+          # The published Main schema requires:
+          #   access_mode
+          #   source_mode
+          #
+          # Both are deliberately omitted.
+          #
+          # This is intended to make Dify reject the request
+          # during input validation rather than execute 5OC.
+
+          payload = {
+              "inputs": {},
+              "response_mode": "streaming",
+              "user": "github-5oc-boundary-diagnostic",
+          }
+
+          encoded_payload = json.dumps(payload).encode("utf-8")
+
           request = urllib.request.Request(
-              PARAMETERS_URL,
+              URL,
+              data=encoded_payload,
               headers={
                   "Authorization": f"Bearer {API_KEY}",
-                  "Accept": "application/json",
+                  "Content-Type": "application/json",
+                  "Accept": "text/event-stream",
                   "User-Agent":
-                      "Grant-Intelligence-5OC-Schema-Diagnostic/1.0",
+                      "Grant-Intelligence-5OC-Diagnostic/1.0",
               },
-              method="GET",
+              method="POST",
           )
+
+          print("Sending intentionally invalid POST...")
+          print(
+              "User-Agent: "
+              "Grant-Intelligence-5OC-Diagnostic/1.0"
+          )
+          print()
 
           try:
               with urllib.request.urlopen(
                   request,
                   timeout=30
               ) as response:
-                  raw = response.read().decode(
+
+                  body = response.read(3000).decode(
                       "utf-8",
                       errors="replace"
                   )
 
+                  print("========================================")
+                  print("UNEXPECTED SUCCESS RESPONSE")
+                  print("========================================")
                   print(
-                      f"GET /parameters HTTP status: "
-                      f"{response.status}"
+                      f"HTTP STATUS: {response.status}"
                   )
-
                   print(
-                      "Content-Type:",
+                      "CONTENT-TYPE:",
                       response.headers.get(
                           "Content-Type",
+                          "unknown"
+                      )
+                  )
+                  print(
+                      "SERVER:",
+                      response.headers.get(
+                          "Server",
                           "unknown"
                       )
                   )
@@ -94,219 +125,113 @@ jobs:
                   if cf_ray:
                       print(f"CF-RAY: {cf_ray}")
 
+                  print()
+                  print("BODY PREVIEW:")
+                  print(body[:2000])
+
+                  print()
+                  print(
+                      "WARNING: Dify accepted the intentionally "
+                      "invalid request."
+                  )
+                  print(
+                      "Do NOT repeat this diagnostic."
+                  )
+
+                  # Fail the GitHub job deliberately so an
+                  # unexpected acceptance is impossible to
+                  # mistake for a successful safety test.
+                  sys.exit(2)
+
           except urllib.error.HTTPError as e:
-              body = e.read().decode(
+
+              body = e.read(3000).decode(
                   "utf-8",
                   errors="replace"
               )
 
+              content_type = e.headers.get(
+                  "Content-Type",
+                  "unknown"
+              )
+
+              server = e.headers.get(
+                  "Server",
+                  "unknown"
+              )
+
+              cf_ray = e.headers.get("CF-RAY")
+
+              print("========================================")
+              print("POST REJECTION RECEIVED")
+              print("========================================")
+              print(f"HTTP STATUS: {e.code}")
+              print(f"CONTENT-TYPE: {content_type}")
+              print(f"SERVER: {server}")
+
+              if cf_ray:
+                  print(f"CF-RAY: {cf_ray}")
+
+              lower_body = body.lower()
+
+              cloudflare_html = (
+                  "access denied" in lower_body
+                  or
+                  "<!doctype html" in lower_body
+                  or
+                  "cloudflare" in lower_body
+              )
+
+              print()
               print(
-                  f"GET /parameters FAILED: HTTP {e.code}"
+                  "CLOUDFLARE HTML ACCESS PAGE:",
+                  "YES" if cloudflare_html else "NO"
               )
 
-              print(body[:1500])
+              print()
+              print("BODY PREVIEW:")
+              print(body[:2000])
 
-              sys.exit(1)
+              print()
+              print("========================================")
 
-          try:
-              data = json.loads(raw)
-          except json.JSONDecodeError:
-              print(
-                  "ERROR: /parameters did not return "
-                  "valid JSON."
-              )
-              sys.exit(1)
-
-          forms = data.get("user_input_form")
-
-          if not isinstance(forms, list):
-              print(
-                  "ERROR: user_input_form is missing "
-                  "or is not a list."
-              )
-              sys.exit(1)
-
-          print()
-          print(
-              f"Published input entries returned: "
-              f"{len(forms)}"
-          )
-          print()
-
-          discovered = {}
-
-          for index, entry in enumerate(forms, start=1):
-
-              if not isinstance(entry, dict):
+              if cloudflare_html:
                   print(
-                      f"{index}. INVALID ENTRY: "
-                      f"{repr(entry)}"
-                  )
-                  continue
-
-              if len(entry) != 1:
-                  print(
-                      f"{index}. UNEXPECTED ENTRY SHAPE"
+                      "RESULT: POST WAS BLOCKED AT "
+                      "CLOUDFLARE BOUNDARY"
                   )
                   print(
-                      json.dumps(
-                          entry,
-                          indent=2,
-                          ensure_ascii=False
-                      )
-                  )
-                  continue
-
-              control_type, config = next(
-                  iter(entry.items())
-              )
-
-              if not isinstance(config, dict):
-                  print(
-                      f"{index}. {control_type}: "
-                      "invalid configuration"
-                  )
-                  continue
-
-              variable = config.get("variable")
-              label = config.get("label")
-              required = config.get("required")
-              declared_type = config.get("type")
-
-              if variable:
-                  discovered[variable] = {
-                      "control_type": control_type,
-                      "config": config,
-                  }
-
-              print("----------------------------------------")
-              print(f"INPUT #{index}")
-              print(f"Variable: {variable}")
-              print(f"Label: {label}")
-              print(f"Control type: {control_type}")
-              print(f"Declared type: {declared_type}")
-              print(f"Required: {required}")
-
-              # File controls can expose additional fields
-              # such as allowed file types, transfer methods,
-              # extensions, or number limits. Print the full
-              # configuration so we do not guess.
-              if (
-                  variable
-                  in (
-                      "standalone_resume_file",
-                      "standalone_document_file",
-                  )
-                  or "file" in control_type.lower()
-              ):
-                  print("FULL FILE CONFIGURATION:")
-                  print(
-                      json.dumps(
-                          config,
-                          indent=2,
-                          ensure_ascii=False,
-                          sort_keys=True
-                      )
-                  )
-
-          print()
-          print("========================================")
-          print("EXPECTED 5OC MAIN START VARIABLES")
-          print("========================================")
-
-          missing = []
-
-          for variable in EXPECTED_VARIABLES:
-              if variable in discovered:
-                  control_type = discovered[
-                      variable
-                  ]["control_type"]
-
-                  config = discovered[
-                      variable
-                  ]["config"]
-
-                  print(
-                      f"FOUND: {variable} "
-                      f"| control={control_type} "
-                      f"| required="
-                      f"{config.get('required')}"
+                      "The request did not produce a normal "
+                      "Dify API validation response."
                   )
               else:
-                  missing.append(variable)
-                  print(f"MISSING: {variable}")
-
-          extras = [
-              variable
-              for variable in discovered
-              if variable not in EXPECTED_VARIABLES
-          ]
-
-          print()
-          print("========================================")
-          print("SCHEMA SUMMARY")
-          print("========================================")
-          print(
-              f"Expected variables: "
-              f"{len(EXPECTED_VARIABLES)}"
-          )
-          print(
-              f"Expected variables found: "
-              f"{len(EXPECTED_VARIABLES) - len(missing)}"
-          )
-          print(
-              f"Expected variables missing: "
-              f"{len(missing)}"
-          )
-          print(
-              f"Additional published variables: "
-              f"{len(extras)}"
-          )
-
-          if missing:
-              print(
-                  "Missing expected variables: "
-                  + ", ".join(missing)
-              )
-
-          if extras:
-              print(
-                  "Additional variables: "
-                  + ", ".join(extras)
-              )
-
-          print()
-          print("FILE INPUT DETAILS")
-          print("----------------------------------------")
-
-          for variable in (
-              "standalone_resume_file",
-              "standalone_document_file",
-          ):
-              item = discovered.get(variable)
-
-              if not item:
-                  print(f"{variable}: NOT FOUND")
-                  continue
-
-              print(f"{variable}:")
-              print(
-                  json.dumps(
-                      item,
-                      indent=2,
-                      ensure_ascii=False,
-                      sort_keys=True
+                  print(
+                      "RESULT: POST REACHED THE DIFY "
+                      "APPLICATION/API LAYER"
                   )
-              )
+                  print(
+                      "Dify rejected the intentionally invalid "
+                      "request rather than Cloudflare blocking it."
+                  )
 
-          print()
-          print("========================================")
-          print("DIAGNOSTIC COMPLETE")
-          print("========================================")
-          print("POST /workflows/run called: NO")
-          print("5OC workflow started: NO")
-          print("Supabase modified: NO")
-          print("Dify file uploaded: NO")
-          print("Expected Dify LLM credits used: 0")
-          print("========================================")
+              print("========================================")
+              print("Valid 5OC inputs supplied: NO")
+              print("Résumé supplied: NO")
+              print("Supabase modified: NO")
+              print("Automatic retry performed: NO")
+              print("========================================")
+
+              # A rejection is the expected diagnostic outcome.
+              sys.exit(0)
+
+          except Exception as e:
+              print("========================================")
+              print("CONNECTION/CLIENT FAILURE")
+              print("========================================")
+              print(
+                  f"{type(e).__name__}: {str(e)}"
+              )
+              print()
+              print("Do NOT repeat the diagnostic.")
+              sys.exit(1)
           PY
