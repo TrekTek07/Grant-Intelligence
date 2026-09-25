@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  connection-test:
+  supabase-connection-test:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -35,9 +35,86 @@ jobs:
             exit 1
           fi
 
-          echo "DIFY_5OC_API_KEY: configured"
-          echo "SUPABASE_URL: configured"
-          echo "SUPABASE_SECRET_KEY: configured"
-          echo "5OC worker shell is ready."
-          echo "No Dify request was made."
-          echo "No Supabase database request was made."
+          echo "Worker secrets are configured."
+
+      - name: Read protected 5OC test record from Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+
+          PROJECT_ID="GI-DATABASE-SAFETY-TEST-001"
+
+          echo "Reading existing 5OC safety-test record..."
+          echo "Dify will NOT be contacted."
+
+          HTTP_CODE=$(curl --silent --show-error \
+            --output /tmp/5oc-response.json \
+            --write-out "%{http_code}" \
+            --get \
+            "${SUPABASE_URL}/rest/v1/five_oc_runs" \
+            --data-urlencode "project_id=eq.${PROJECT_ID}" \
+            --data-urlencode "select=id,project_id,status,workflow_run_id,task_id,dify_user,launch_attempted_at,created_at,updated_at" \
+            --header "apikey: ${SUPABASE_SECRET_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_SECRET_KEY}" \
+            --header "Accept: application/json")
+
+          echo "Supabase HTTP status: ${HTTP_CODE}"
+
+          if [ "${HTTP_CODE}" != "200" ]; then
+            echo "::error::Supabase request failed."
+            cat /tmp/5oc-response.json
+            exit 1
+          fi
+
+          RECORD_COUNT=$(python3 - <<'PY'
+          import json
+
+          with open("/tmp/5oc-response.json", "r") as f:
+              data = json.load(f)
+
+          if not isinstance(data, list):
+              raise SystemExit("Supabase did not return a JSON array.")
+
+          print(len(data))
+          PY
+          )
+
+          if [ "${RECORD_COUNT}" != "1" ]; then
+            echo "::error::Expected exactly one protected test record; found ${RECORD_COUNT}."
+            exit 1
+          fi
+
+          python3 - <<'PY'
+          import json
+
+          with open("/tmp/5oc-response.json", "r") as f:
+              data = json.load(f)
+
+          row = data[0]
+
+          if row.get("project_id") != "GI-DATABASE-SAFETY-TEST-001":
+              raise SystemExit("Unexpected project_id returned.")
+
+          if row.get("status") != "created":
+              raise SystemExit(
+                  f"Unexpected test status: {row.get('status')}"
+              )
+
+          if row.get("workflow_run_id") is not None:
+              raise SystemExit(
+                  "Safety-test record unexpectedly contains a workflow_run_id."
+              )
+
+          if row.get("launch_attempted_at") is not None:
+              raise SystemExit(
+                  "Safety-test record unexpectedly shows a Dify launch attempt."
+              )
+
+          print(f"Record ID: {row.get('id')}")
+          print(f"Project ID: {row.get('project_id')}")
+          print(f"Status: {row.get('status')}")
+          print("Protected Supabase record retrieved successfully.")
+          print("No Dify request was made.")
+          PY
