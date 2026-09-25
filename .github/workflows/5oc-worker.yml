@@ -122,6 +122,68 @@ jobs:
 
               return data[0]
 
+          def sb_claim(run_id, claim_time):
+              """
+              Atomically claim this record for execution.
+
+              The PATCH succeeds only if the record is still
+              completely untouched by an execution attempt.
+              """
+
+              query = urllib.parse.urlencode({
+                  "id": f"eq.{run_id}",
+                  "status": "eq.created",
+                  "launch_attempted_at": "is.null",
+                  "workflow_run_id": "is.null",
+                  "task_id": "is.null",
+              })
+
+              url = (
+                  f"{SUPABASE_URL}/rest/v1/"
+                  f"five_oc_runs?{query}"
+              )
+
+              payload = {
+                  "status": "launching",
+                  "launch_attempted_at": claim_time,
+                  "error_message": None,
+                  "updated_at": claim_time,
+              }
+
+              req = urllib.request.Request(
+                  url,
+                  data=json.dumps(payload).encode(),
+                  headers=sb_headers({
+                      "Prefer": "return=representation"
+                  }),
+                  method="PATCH",
+              )
+
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  body = r.read().decode()
+
+              data = json.loads(body)
+
+              if not isinstance(data, list):
+                  raise RuntimeError(
+                      "Invalid response while claiming run."
+                  )
+
+              if len(data) == 0:
+                  raise RuntimeError(
+                      "SAFETY STOP: atomic launch claim failed. "
+                      "The record was already claimed or its "
+                      "execution state changed. Dify was NOT contacted."
+                  )
+
+              if len(data) != 1:
+                  raise RuntimeError(
+                      "SAFETY STOP: atomic claim affected an "
+                      "unexpected number of records."
+                  )
+
+              return data[0]
+
           # ---------------------------------------------------
           # 1. Read durable checkpoint
           # ---------------------------------------------------
@@ -192,19 +254,14 @@ jobs:
           print("Duplicate launch guard: CLEAR")
 
           # ---------------------------------------------------
-          # 2. CLAIM BEFORE CONTACTING /workflows/run
+          # 2. ATOMIC CLAIM BEFORE CONTACTING /workflows/run
           # ---------------------------------------------------
 
           claim_time = now()
 
-          claimed = sb_patch(
+          claimed = sb_claim(
               run_id,
-              {
-                  "status": "launching",
-                  "launch_attempted_at": claim_time,
-                  "error_message": None,
-                  "updated_at": claim_time,
-              },
+              claim_time,
           )
 
           if claimed.get("status") != "launching":
@@ -217,7 +274,7 @@ jobs:
                   "Launch claim timestamp was not persisted."
               )
 
-          print("Durable launch claim: PERSISTED")
+          print("Atomic durable launch claim: PERSISTED")
           print(
               "IMPORTANT: From this point forward this run "
               "must NOT be manually relaunched."
@@ -252,8 +309,6 @@ jobs:
                       ""
                   ),
 
-              # Main START file input.
-              # Current 5OC contract uses a file array.
               "standalone_resume_file":
                   [resume_file],
 
@@ -263,7 +318,6 @@ jobs:
                       ""
                   ),
 
-              # No supporting document in this test.
               "standalone_document_file":
                   [],
 
@@ -340,7 +394,7 @@ jobs:
 
               # -----------------------------------------------
               # Read the SSE stream continuously.
-              # Do NOT cancel it.
+              # DO NOT cancel the connection.
               # -----------------------------------------------
 
               for raw_line in response:
@@ -368,14 +422,11 @@ jobs:
 
                   event_name = event.get("event")
 
-                  # IDs may appear at top level.
                   new_task_id = event.get("task_id")
                   new_workflow_id = event.get(
                       "workflow_run_id"
                   )
 
-                  # Some event structures may carry the
-                  # workflow execution ID inside data.id.
                   event_data = event.get("data")
 
                   if (
@@ -402,7 +453,8 @@ jobs:
                           "Dify workflow_run_id received."
                       )
 
-                  # Persist IDs immediately.
+                  # Persist identifiers as soon as Dify
+                  # supplies them.
                   if changed:
                       update = {
                           "status": "running",
@@ -424,8 +476,7 @@ jobs:
                           "persisted."
                       )
 
-                  # Useful progress without dumping private
-                  # workflow content into GitHub logs.
+                  # Log only major lifecycle events.
                   if event_name:
                       if event_name in (
                           "workflow_started",
@@ -563,7 +614,7 @@ jobs:
           final_error = terminal_data.get("error")
           final_outputs = terminal_data.get("outputs")
 
-          # Capture IDs one final time if available.
+          # Capture workflow ID one final time if necessary.
           if not workflow_run_id:
               workflow_run_id = terminal_data.get("id")
 
