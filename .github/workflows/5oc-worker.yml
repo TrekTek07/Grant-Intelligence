@@ -1,4 +1,4 @@
-name: 5OC Worker
+name: 5OC Cloudflare Diagnostic
 
 on:
   workflow_dispatch:
@@ -7,719 +7,190 @@ permissions:
   contents: read
 
 jobs:
-  run-5oc:
+  diagnose-dify-access:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-
-    env:
-      PROJECT_ID: GI-WEBSITE-STORAGE-TEST-002
-      DIFY_USER: github-5oc-worker
+    timeout-minutes: 5
 
     steps:
-      - name: Execute protected 5OC run
+      - name: Test Dify API boundary without running 5OC
         env:
           DIFY_5OC_API_KEY: ${{ secrets.DIFY_5OC_API_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
           python3 - <<'PY'
-          import json
           import os
-          import sys
           import urllib.request
-          import urllib.parse
           import urllib.error
-          from datetime import datetime, timezone
 
-          PROJECT_ID = os.environ["PROJECT_ID"]
-          DIFY_USER = os.environ["DIFY_USER"]
+          API_KEY = os.environ["DIFY_5OC_API_KEY"]
 
-          SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
-          SUPABASE_KEY = os.environ["SUPABASE_SECRET_KEY"]
-          DIFY_KEY = os.environ["DIFY_5OC_API_KEY"]
+          if not API_KEY:
+              raise RuntimeError("DIFY_5OC_API_KEY is missing.")
 
-          DIFY_RUN_URL = "https://api.dify.ai/v1/workflows/run"
+          BASE = "https://api.dify.ai/v1"
 
-          # ---------------------------------------------------
-          # Helpers
-          # ---------------------------------------------------
+          print("========================================")
+          print("5OC ZERO-CREDIT CLOUDFLARE DIAGNOSTIC")
+          print("========================================")
+          print("POST /workflows/run: DISABLED")
+          print("Workflow execution: DISABLED")
+          print("Supabase writes: DISABLED")
+          print("Dify file upload: DISABLED")
+          print("----------------------------------------")
 
-          def now():
-              return datetime.now(timezone.utc).isoformat()
-
-          def sb_headers(extra=None):
+          def probe(name, url, method="GET", authenticated=False):
               headers = {
-                  "apikey": SUPABASE_KEY,
-                  "Authorization": f"Bearer {SUPABASE_KEY}",
-                  "Content-Type": "application/json",
-              }
-              if extra:
-                  headers.update(extra)
-              return headers
-
-          def sb_get(project_id):
-              query = urllib.parse.urlencode({
-                  "project_id": f"eq.{project_id}",
-                  "select": (
-                      "id,project_id,status,inputs_json,"
-                      "resume_storage_path,"
-                      "dify_resume_upload_id,dify_user,"
-                      "workflow_run_id,task_id,"
-                      "launch_attempted_at,error_message"
-                  ),
-              })
-
-              url = (
-                  f"{SUPABASE_URL}/rest/v1/"
-                  f"five_oc_runs?{query}"
-              )
-
-              req = urllib.request.Request(
-                  url,
-                  headers=sb_headers(),
-                  method="GET",
-              )
-
-              with urllib.request.urlopen(req, timeout=30) as r:
-                  data = json.loads(r.read().decode())
-
-              if not isinstance(data, list) or len(data) != 1:
-                  raise RuntimeError(
-                      "Expected exactly one durable run record."
-                  )
-
-              return data[0]
-
-          def sb_patch(run_id, payload):
-              query = urllib.parse.urlencode({
-                  "id": f"eq.{run_id}"
-              })
-
-              url = (
-                  f"{SUPABASE_URL}/rest/v1/"
-                  f"five_oc_runs?{query}"
-              )
-
-              req = urllib.request.Request(
-                  url,
-                  data=json.dumps(payload).encode(),
-                  headers=sb_headers({
-                      "Prefer": "return=representation"
-                  }),
-                  method="PATCH",
-              )
-
-              with urllib.request.urlopen(req, timeout=30) as r:
-                  body = r.read().decode()
-
-              data = json.loads(body)
-
-              if not isinstance(data, list) or len(data) != 1:
-                  raise RuntimeError(
-                      "Supabase update did not return "
-                      "exactly one record."
-                  )
-
-              return data[0]
-
-          def sb_claim(run_id, claim_time):
-              """
-              Atomically claim this record for execution.
-
-              The PATCH succeeds only if the record is still
-              completely untouched by an execution attempt.
-              """
-
-              query = urllib.parse.urlencode({
-                  "id": f"eq.{run_id}",
-                  "status": "eq.created",
-                  "launch_attempted_at": "is.null",
-                  "workflow_run_id": "is.null",
-                  "task_id": "is.null",
-              })
-
-              url = (
-                  f"{SUPABASE_URL}/rest/v1/"
-                  f"five_oc_runs?{query}"
-              )
-
-              payload = {
-                  "status": "launching",
-                  "launch_attempted_at": claim_time,
-                  "error_message": None,
-                  "updated_at": claim_time,
+                  "Accept": "application/json",
+                  "User-Agent": "Grant-Intelligence-5OC-Diagnostic/1.0",
               }
 
-              req = urllib.request.Request(
+              if authenticated:
+                  headers["Authorization"] = f"Bearer {API_KEY}"
+
+              request = urllib.request.Request(
                   url,
-                  data=json.dumps(payload).encode(),
-                  headers=sb_headers({
-                      "Prefer": "return=representation"
-                  }),
-                  method="PATCH",
+                  headers=headers,
+                  method=method,
               )
 
-              with urllib.request.urlopen(req, timeout=30) as r:
-                  body = r.read().decode()
+              print()
+              print(f"TEST: {name}")
+              print(f"METHOD: {method}")
+              print(f"URL PATH: {url.replace(BASE, '')}")
 
-              data = json.loads(body)
+              try:
+                  with urllib.request.urlopen(
+                      request,
+                      timeout=30
+                  ) as response:
+                      body = response.read(1000).decode(
+                          "utf-8",
+                          errors="replace"
+                      )
 
-              if not isinstance(data, list):
-                  raise RuntimeError(
-                      "Invalid response while claiming run."
-                  )
+                      print(f"HTTP STATUS: {response.status}")
+                      print(
+                          "CONTENT-TYPE:",
+                          response.headers.get(
+                              "Content-Type",
+                              "unknown"
+                          )
+                      )
 
-              if len(data) == 0:
-                  raise RuntimeError(
-                      "SAFETY STOP: atomic launch claim failed. "
-                      "The record was already claimed or its "
-                      "execution state changed. Dify was NOT contacted."
-                  )
+                      server = response.headers.get(
+                          "Server",
+                          "unknown"
+                      )
+                      print(f"SERVER: {server}")
 
-              if len(data) != 1:
-                  raise RuntimeError(
-                      "SAFETY STOP: atomic claim affected an "
-                      "unexpected number of records."
-                  )
+                      cf_ray = response.headers.get("CF-RAY")
+                      if cf_ray:
+                          print(f"CF-RAY: {cf_ray}")
 
-              return data[0]
+                      print(
+                          "BODY PREVIEW:",
+                          body[:500].replace("\n", " ")
+                      )
 
-          # ---------------------------------------------------
-          # 1. Read durable checkpoint
-          # ---------------------------------------------------
-
-          print("========================================")
-          print("5OC INTEGRATED EXECUTION WORKER")
-          print("========================================")
-          print(f"Project ID: {PROJECT_ID}")
-          print("Reading durable checkpoint...")
-
-          row = sb_get(PROJECT_ID)
-
-          run_id = row["id"]
-
-          if row.get("status") != "created":
-              raise RuntimeError(
-                  "SAFETY STOP: run status is not 'created'. "
-                  f"Current status: {row.get('status')}"
-              )
-
-          if row.get("launch_attempted_at") is not None:
-              raise RuntimeError(
-                  "SAFETY STOP: launch_attempted_at is "
-                  "already populated. Automatic retry refused."
-              )
-
-          if row.get("workflow_run_id") is not None:
-              raise RuntimeError(
-                  "SAFETY STOP: workflow_run_id already exists."
-              )
-
-          if row.get("task_id") is not None:
-              raise RuntimeError(
-                  "SAFETY STOP: task_id already exists."
-              )
-
-          upload_id = row.get("dify_resume_upload_id")
-
-          if not upload_id:
-              raise RuntimeError(
-                  "SAFETY STOP: persisted Dify résumé "
-                  "upload ID is missing."
-              )
-
-          persisted_user = row.get("dify_user")
-
-          if persisted_user != DIFY_USER:
-              raise RuntimeError(
-                  "SAFETY STOP: persisted Dify user does "
-                  "not match worker Dify user."
-              )
-
-          inputs = row.get("inputs_json") or {}
-
-          if inputs.get("project_id") != PROJECT_ID:
-              raise RuntimeError(
-                  "SAFETY STOP: inputs_json project_id mismatch."
-              )
-
-          if inputs.get("source_mode") != "standalone_upload":
-              raise RuntimeError(
-                  "SAFETY STOP: unexpected source_mode."
-              )
-
-          print(f"Run record ID: {run_id}")
-          print("Persisted Dify résumé upload: FOUND")
-          print("Persisted Dify user: VERIFIED")
-          print("Duplicate launch guard: CLEAR")
-
-          # ---------------------------------------------------
-          # 2. ATOMIC CLAIM BEFORE CONTACTING /workflows/run
-          # ---------------------------------------------------
-
-          claim_time = now()
-
-          claimed = sb_claim(
-              run_id,
-              claim_time,
-          )
-
-          if claimed.get("status") != "launching":
-              raise RuntimeError(
-                  "Could not establish durable launch claim."
-              )
-
-          if not claimed.get("launch_attempted_at"):
-              raise RuntimeError(
-                  "Launch claim timestamp was not persisted."
-              )
-
-          print("Atomic durable launch claim: PERSISTED")
-          print(
-              "IMPORTANT: From this point forward this run "
-              "must NOT be manually relaunched."
-          )
-
-          # ---------------------------------------------------
-          # 3. Construct exact Main START payload
-          # ---------------------------------------------------
-
-          resume_file = {
-              "transfer_method": "local_file",
-              "upload_file_id": upload_id,
-              "type": "document",
-          }
-
-          dify_inputs = {
-              "project_id":
-                  PROJECT_ID,
-
-              "access_mode":
-                  inputs.get("access_mode", "premium"),
-
-              "source_mode":
-                  inputs.get(
-                      "source_mode",
-                      "standalone_upload"
-                  ),
-
-              "standalone_resume_text":
-                  inputs.get(
-                      "standalone_resume_text",
-                      ""
-                  ),
-
-              "standalone_resume_file":
-                  [resume_file],
-
-              "standalone_document_text":
-                  inputs.get(
-                      "standalone_document_text",
-                      ""
-                  ),
-
-              "standalone_document_file":
-                  [],
-
-              "standalone_intake_notes":
-                  inputs.get(
-                      "standalone_intake_notes",
-                      ""
-                  ),
-
-              "module00_source_data":
-                  inputs.get(
-                      "module00_source_data",
-                      ""
-                  ),
-
-              "module01_source_data":
-                  inputs.get(
-                      "module01_source_data",
-                      ""
-                  ),
-          }
-
-          payload = {
-              "inputs": dify_inputs,
-              "response_mode": "streaming",
-              "user": DIFY_USER,
-          }
-
-          print("Main 5OC payload prepared.")
-          print("Response mode: streaming")
-          print("Résumé: persisted Dify upload reused")
-          print("Supporting document: none")
-
-          # ---------------------------------------------------
-          # 4. Launch ONCE and hold SSE connection
-          # ---------------------------------------------------
-
-          request = urllib.request.Request(
-              DIFY_RUN_URL,
-              data=json.dumps(payload).encode(),
-              headers={
-                  "Authorization": f"Bearer {DIFY_KEY}",
-                  "Content-Type": "application/json",
-                  "Accept": "text/event-stream",
-              },
-              method="POST",
-          )
-
-          task_id = None
-          workflow_run_id = None
-          terminal_event = None
-          terminal_data = None
-
-          print("----------------------------------------")
-          print("CONTACTING DIFY /workflows/run ONCE")
-          print("----------------------------------------")
-
-          try:
-              response = urllib.request.urlopen(
-                  request,
-                  timeout=2700,
-              )
-
-              print(
-                  f"Dify HTTP status: "
-                  f"{response.status}"
-              )
-
-              if response.status not in (200, 201):
-                  raise RuntimeError(
-                      f"Unexpected Dify HTTP status "
-                      f"{response.status}"
-                  )
-
-              # -----------------------------------------------
-              # Read the SSE stream continuously.
-              # DO NOT cancel the connection.
-              # -----------------------------------------------
-
-              for raw_line in response:
-                  line = raw_line.decode(
+              except urllib.error.HTTPError as e:
+                  body = e.read(1000).decode(
                       "utf-8",
                       errors="replace"
-                  ).strip()
-
-                  if not line.startswith("data:"):
-                      continue
-
-                  raw_json = line[5:].strip()
-
-                  if not raw_json:
-                      continue
-
-                  try:
-                      event = json.loads(raw_json)
-                  except json.JSONDecodeError:
-                      print(
-                          "Received non-JSON SSE data; "
-                          "continuing."
-                      )
-                      continue
-
-                  event_name = event.get("event")
-
-                  new_task_id = event.get("task_id")
-                  new_workflow_id = event.get(
-                      "workflow_run_id"
                   )
 
-                  event_data = event.get("data")
+                  print(f"HTTP STATUS: {e.code}")
+                  print(
+                      "CONTENT-TYPE:",
+                      e.headers.get(
+                          "Content-Type",
+                          "unknown"
+                      )
+                  )
+
+                  server = e.headers.get(
+                      "Server",
+                      "unknown"
+                  )
+                  print(f"SERVER: {server}")
+
+                  cf_ray = e.headers.get("CF-RAY")
+                  if cf_ray:
+                      print(f"CF-RAY: {cf_ray}")
 
                   if (
-                      not new_workflow_id
-                      and event_name == "workflow_started"
-                      and isinstance(event_data, dict)
+                      "cloudflare" in body.lower()
+                      or "access denied" in body.lower()
                   ):
-                      new_workflow_id = event_data.get("id")
-
-                  changed = False
-
-                  if new_task_id and not task_id:
-                      task_id = new_task_id
-                      changed = True
-                      print("Dify task_id received.")
-
-                  if (
-                      new_workflow_id
-                      and not workflow_run_id
-                  ):
-                      workflow_run_id = new_workflow_id
-                      changed = True
                       print(
-                          "Dify workflow_run_id received."
+                          "CLOUDFLARE ACCESS PAGE: YES"
+                      )
+                  else:
+                      print(
+                          "CLOUDFLARE ACCESS PAGE: NO/"
+                          "NOT DETECTED"
                       )
 
-                  # Persist identifiers as soon as Dify
-                  # supplies them.
-                  if changed:
-                      update = {
-                          "status": "running",
-                          "updated_at": now(),
-                      }
+                  print(
+                      "BODY PREVIEW:",
+                      body[:500].replace("\n", " ")
+                  )
 
-                      if task_id:
-                          update["task_id"] = task_id
+              except Exception as e:
+                  print(
+                      "CONNECTION ERROR:",
+                      type(e).__name__,
+                      str(e)
+                  )
 
-                      if workflow_run_id:
-                          update[
-                              "workflow_run_id"
-                          ] = workflow_run_id
+          # --------------------------------------------------
+          # Test 1
+          # Basic API-host reachability.
+          # No workflow execution.
+          # --------------------------------------------------
 
-                      sb_patch(run_id, update)
+          probe(
+              "API host reachability",
+              f"{BASE}/",
+              method="GET",
+              authenticated=False,
+          )
 
-                      print(
-                          "Dify execution identifiers "
-                          "persisted."
-                      )
+          # --------------------------------------------------
+          # Test 2
+          # Authenticated read-only API request.
+          # This does NOT execute a workflow.
+          # --------------------------------------------------
 
-                  # Log only major lifecycle events.
-                  if event_name:
-                      if event_name in (
-                          "workflow_started",
-                          "workflow_finished",
-                          "error",
-                      ):
-                          print(
-                              f"Dify event: {event_name}"
-                          )
+          probe(
+              "Authenticated workflow parameters read",
+              f"{BASE}/parameters",
+              method="GET",
+              authenticated=True,
+          )
 
-                  if event_name == "workflow_finished":
-                      terminal_event = event_name
-                      terminal_data = event_data
-                      break
+          # --------------------------------------------------
+          # Test 3
+          # OPTIONS against the run endpoint.
+          #
+          # IMPORTANT:
+          # This is NOT POST.
+          # It contains no workflow inputs.
+          # It cannot intentionally start 5OC.
+          # --------------------------------------------------
 
-                  if event_name == "error":
-                      terminal_event = event_name
-                      terminal_data = event
-                      break
+          probe(
+              "Workflow run endpoint OPTIONS probe",
+              f"{BASE}/workflows/run",
+              method="OPTIONS",
+              authenticated=True,
+          )
 
-          except urllib.error.HTTPError as e:
-              error_body = e.read().decode(
-                  "utf-8",
-                  errors="replace"
-              )
-
-              safe_error = (
-                  f"Dify HTTP error {e.code}: "
-                  f"{error_body[:1500]}"
-              )
-
-              sb_patch(
-                  run_id,
-                  {
-                      "status": "failed",
-                      "error_message": safe_error,
-                      "updated_at": now(),
-                  },
-              )
-
-              print(safe_error)
-              print(
-                  "Run marked FAILED. "
-                  "Automatic retry is prohibited."
-              )
-              sys.exit(1)
-
-          except Exception as e:
-              safe_error = (
-                  "Dify streaming execution exception: "
-                  f"{str(e)[:1500]}"
-              )
-
-              sb_patch(
-                  run_id,
-                  {
-                      "status": "failed",
-                      "error_message": safe_error,
-                      "updated_at": now(),
-                  },
-              )
-
-              print(safe_error)
-              print(
-                  "Run marked FAILED. "
-                  "Automatic retry is prohibited."
-              )
-              sys.exit(1)
-
-          # ---------------------------------------------------
-          # 5. Validate terminal event
-          # ---------------------------------------------------
-
-          if terminal_event is None:
-              error = (
-                  "Dify stream ended without a terminal "
-                  "workflow_finished or error event."
-              )
-
-              sb_patch(
-                  run_id,
-                  {
-                      "status": "failed",
-                      "error_message": error,
-                      "updated_at": now(),
-                  },
-              )
-
-              print(error)
-              sys.exit(1)
-
-          if terminal_event == "error":
-              error = (
-                  "Dify returned a terminal error event."
-              )
-
-              sb_patch(
-                  run_id,
-                  {
-                      "status": "failed",
-                      "error_message": error,
-                      "result_json": terminal_data,
-                      "updated_at": now(),
-                  },
-              )
-
-              print(error)
-              print(
-                  "Automatic retry is prohibited."
-              )
-              sys.exit(1)
-
-          # ---------------------------------------------------
-          # 6. Interpret workflow_finished
-          # ---------------------------------------------------
-
-          if not isinstance(terminal_data, dict):
-              error = (
-                  "workflow_finished contained invalid data."
-              )
-
-              sb_patch(
-                  run_id,
-                  {
-                      "status": "failed",
-                      "error_message": error,
-                      "updated_at": now(),
-                  },
-              )
-
-              print(error)
-              sys.exit(1)
-
-          final_status = terminal_data.get("status")
-          final_error = terminal_data.get("error")
-          final_outputs = terminal_data.get("outputs")
-
-          # Capture workflow ID one final time if necessary.
-          if not workflow_run_id:
-              workflow_run_id = terminal_data.get("id")
-
-          final_result = {
-              "event": "workflow_finished",
-              "workflow_status": final_status,
-              "outputs": final_outputs,
-              "error": final_error,
-              "elapsed_time":
-                  terminal_data.get("elapsed_time"),
-              "total_tokens":
-                  terminal_data.get("total_tokens"),
-              "total_steps":
-                  terminal_data.get("total_steps"),
-              "created_at":
-                  terminal_data.get("created_at"),
-              "finished_at":
-                  terminal_data.get("finished_at"),
-          }
-
-          if final_status == "succeeded":
-              update = {
-                  "status": "succeeded",
-                  "error_message": None,
-                  "result_json": final_result,
-                  "updated_at": now(),
-              }
-
-              if task_id:
-                  update["task_id"] = task_id
-
-              if workflow_run_id:
-                  update[
-                      "workflow_run_id"
-                  ] = workflow_run_id
-
-              sb_patch(run_id, update)
-
-              print("========================================")
-              print("5OC INTEGRATED RUN: SUCCEEDED")
-              print("========================================")
-              print(f"Record ID: {run_id}")
-              print(
-                  "Workflow run ID persisted: "
-                  f"{bool(workflow_run_id)}"
-              )
-              print(
-                  "Task ID persisted: "
-                  f"{bool(task_id)}"
-              )
-              print(
-                  f"Total tokens: "
-                  f"{terminal_data.get('total_tokens')}"
-              )
-              print(
-                  f"Total steps: "
-                  f"{terminal_data.get('total_steps')}"
-              )
-              print(
-                  f"Elapsed time: "
-                  f"{terminal_data.get('elapsed_time')}"
-              )
-              print(
-                  "Validated terminal result persisted "
-                  "to Supabase."
-              )
-              print("========================================")
-
-          else:
-              error = (
-                  final_error
-                  or
-                  f"Dify workflow finished with status "
-                  f"{final_status}"
-              )
-
-              update = {
-                  "status": "failed",
-                  "error_message": str(error)[:4000],
-                  "result_json": final_result,
-                  "updated_at": now(),
-              }
-
-              if task_id:
-                  update["task_id"] = task_id
-
-              if workflow_run_id:
-                  update[
-                      "workflow_run_id"
-                  ] = workflow_run_id
-
-              sb_patch(run_id, update)
-
-              print("========================================")
-              print("5OC INTEGRATED RUN: FAILED")
-              print("========================================")
-              print(f"Final status: {final_status}")
-              print(f"Error: {error}")
-              print(
-                  "Failure persisted to Supabase."
-              )
-              print(
-                  "DO NOT automatically rerun this record."
-              )
-              print("========================================")
-
-              sys.exit(1)
+          print()
+          print("========================================")
+          print("DIAGNOSTIC COMPLETE")
+          print("========================================")
+          print("POST /workflows/run called: NO")
+          print("5OC workflow started: NO")
+          print("Supabase record 2 modified: NO")
+          print("Expected Dify LLM credits used: 0")
+          print("========================================")
           PY
