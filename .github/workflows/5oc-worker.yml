@@ -1,4 +1,4 @@
-name: 5OC Cloudflare Diagnostic
+name: 5OC Published Input Schema Diagnostic
 
 on:
   workflow_dispatch:
@@ -7,182 +7,297 @@ permissions:
   contents: read
 
 jobs:
-  diagnose-dify-access:
+  inspect-published-schema:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-      - name: Test Dify API boundary without running 5OC
+      - name: Inspect published Dify Main input schema
         env:
           DIFY_5OC_API_KEY: ${{ secrets.DIFY_5OC_API_KEY }}
         run: |
           python3 - <<'PY'
+          import json
           import os
+          import sys
           import urllib.request
           import urllib.error
 
-          API_KEY = os.environ["DIFY_5OC_API_KEY"]
+          API_KEY = os.environ.get("DIFY_5OC_API_KEY", "")
+          BASE = "https://api.dify.ai/v1"
+          PARAMETERS_URL = f"{BASE}/parameters"
+
+          EXPECTED_VARIABLES = [
+              "project_id",
+              "access_mode",
+              "source_mode",
+              "standalone_resume_text",
+              "standalone_resume_file",
+              "standalone_document_text",
+              "standalone_document_file",
+              "standalone_intake_notes",
+              "module00_source_data",
+              "module01_source_data",
+          ]
 
           if not API_KEY:
-              raise RuntimeError("DIFY_5OC_API_KEY is missing.")
-
-          BASE = "https://api.dify.ai/v1"
+              raise RuntimeError(
+                  "DIFY_5OC_API_KEY is missing."
+              )
 
           print("========================================")
-          print("5OC ZERO-CREDIT CLOUDFLARE DIAGNOSTIC")
+          print("5OC PUBLISHED INPUT SCHEMA DIAGNOSTIC")
           print("========================================")
+          print("GET /parameters: ENABLED")
           print("POST /workflows/run: DISABLED")
           print("Workflow execution: DISABLED")
           print("Supabase writes: DISABLED")
           print("Dify file upload: DISABLED")
           print("----------------------------------------")
 
-          def probe(name, url, method="GET", authenticated=False):
-              headers = {
+          request = urllib.request.Request(
+              PARAMETERS_URL,
+              headers={
+                  "Authorization": f"Bearer {API_KEY}",
                   "Accept": "application/json",
-                  "User-Agent": "Grant-Intelligence-5OC-Diagnostic/1.0",
-              }
+                  "User-Agent":
+                      "Grant-Intelligence-5OC-Schema-Diagnostic/1.0",
+              },
+              method="GET",
+          )
 
-              if authenticated:
-                  headers["Authorization"] = f"Bearer {API_KEY}"
-
-              request = urllib.request.Request(
-                  url,
-                  headers=headers,
-                  method=method,
-              )
-
-              print()
-              print(f"TEST: {name}")
-              print(f"METHOD: {method}")
-              print(f"URL PATH: {url.replace(BASE, '')}")
-
-              try:
-                  with urllib.request.urlopen(
-                      request,
-                      timeout=30
-                  ) as response:
-                      body = response.read(1000).decode(
-                          "utf-8",
-                          errors="replace"
-                      )
-
-                      print(f"HTTP STATUS: {response.status}")
-                      print(
-                          "CONTENT-TYPE:",
-                          response.headers.get(
-                              "Content-Type",
-                              "unknown"
-                          )
-                      )
-
-                      server = response.headers.get(
-                          "Server",
-                          "unknown"
-                      )
-                      print(f"SERVER: {server}")
-
-                      cf_ray = response.headers.get("CF-RAY")
-                      if cf_ray:
-                          print(f"CF-RAY: {cf_ray}")
-
-                      print(
-                          "BODY PREVIEW:",
-                          body[:500].replace("\n", " ")
-                      )
-
-              except urllib.error.HTTPError as e:
-                  body = e.read(1000).decode(
+          try:
+              with urllib.request.urlopen(
+                  request,
+                  timeout=30
+              ) as response:
+                  raw = response.read().decode(
                       "utf-8",
                       errors="replace"
                   )
 
-                  print(f"HTTP STATUS: {e.code}")
                   print(
-                      "CONTENT-TYPE:",
-                      e.headers.get(
+                      f"GET /parameters HTTP status: "
+                      f"{response.status}"
+                  )
+
+                  print(
+                      "Content-Type:",
+                      response.headers.get(
                           "Content-Type",
                           "unknown"
                       )
                   )
 
-                  server = e.headers.get(
-                      "Server",
-                      "unknown"
-                  )
-                  print(f"SERVER: {server}")
+                  cf_ray = response.headers.get("CF-RAY")
 
-                  cf_ray = e.headers.get("CF-RAY")
                   if cf_ray:
                       print(f"CF-RAY: {cf_ray}")
 
-                  if (
-                      "cloudflare" in body.lower()
-                      or "access denied" in body.lower()
-                  ):
-                      print(
-                          "CLOUDFLARE ACCESS PAGE: YES"
-                      )
-                  else:
-                      print(
-                          "CLOUDFLARE ACCESS PAGE: NO/"
-                          "NOT DETECTED"
-                      )
+          except urllib.error.HTTPError as e:
+              body = e.read().decode(
+                  "utf-8",
+                  errors="replace"
+              )
 
+              print(
+                  f"GET /parameters FAILED: HTTP {e.code}"
+              )
+
+              print(body[:1500])
+
+              sys.exit(1)
+
+          try:
+              data = json.loads(raw)
+          except json.JSONDecodeError:
+              print(
+                  "ERROR: /parameters did not return "
+                  "valid JSON."
+              )
+              sys.exit(1)
+
+          forms = data.get("user_input_form")
+
+          if not isinstance(forms, list):
+              print(
+                  "ERROR: user_input_form is missing "
+                  "or is not a list."
+              )
+              sys.exit(1)
+
+          print()
+          print(
+              f"Published input entries returned: "
+              f"{len(forms)}"
+          )
+          print()
+
+          discovered = {}
+
+          for index, entry in enumerate(forms, start=1):
+
+              if not isinstance(entry, dict):
                   print(
-                      "BODY PREVIEW:",
-                      body[:500].replace("\n", " ")
+                      f"{index}. INVALID ENTRY: "
+                      f"{repr(entry)}"
+                  )
+                  continue
+
+              if len(entry) != 1:
+                  print(
+                      f"{index}. UNEXPECTED ENTRY SHAPE"
+                  )
+                  print(
+                      json.dumps(
+                          entry,
+                          indent=2,
+                          ensure_ascii=False
+                      )
+                  )
+                  continue
+
+              control_type, config = next(
+                  iter(entry.items())
+              )
+
+              if not isinstance(config, dict):
+                  print(
+                      f"{index}. {control_type}: "
+                      "invalid configuration"
+                  )
+                  continue
+
+              variable = config.get("variable")
+              label = config.get("label")
+              required = config.get("required")
+              declared_type = config.get("type")
+
+              if variable:
+                  discovered[variable] = {
+                      "control_type": control_type,
+                      "config": config,
+                  }
+
+              print("----------------------------------------")
+              print(f"INPUT #{index}")
+              print(f"Variable: {variable}")
+              print(f"Label: {label}")
+              print(f"Control type: {control_type}")
+              print(f"Declared type: {declared_type}")
+              print(f"Required: {required}")
+
+              # File controls can expose additional fields
+              # such as allowed file types, transfer methods,
+              # extensions, or number limits. Print the full
+              # configuration so we do not guess.
+              if (
+                  variable
+                  in (
+                      "standalone_resume_file",
+                      "standalone_document_file",
+                  )
+                  or "file" in control_type.lower()
+              ):
+                  print("FULL FILE CONFIGURATION:")
+                  print(
+                      json.dumps(
+                          config,
+                          indent=2,
+                          ensure_ascii=False,
+                          sort_keys=True
+                      )
                   )
 
-              except Exception as e:
+          print()
+          print("========================================")
+          print("EXPECTED 5OC MAIN START VARIABLES")
+          print("========================================")
+
+          missing = []
+
+          for variable in EXPECTED_VARIABLES:
+              if variable in discovered:
+                  control_type = discovered[
+                      variable
+                  ]["control_type"]
+
+                  config = discovered[
+                      variable
+                  ]["config"]
+
                   print(
-                      "CONNECTION ERROR:",
-                      type(e).__name__,
-                      str(e)
+                      f"FOUND: {variable} "
+                      f"| control={control_type} "
+                      f"| required="
+                      f"{config.get('required')}"
                   )
+              else:
+                  missing.append(variable)
+                  print(f"MISSING: {variable}")
 
-          # --------------------------------------------------
-          # Test 1
-          # Basic API-host reachability.
-          # No workflow execution.
-          # --------------------------------------------------
+          extras = [
+              variable
+              for variable in discovered
+              if variable not in EXPECTED_VARIABLES
+          ]
 
-          probe(
-              "API host reachability",
-              f"{BASE}/",
-              method="GET",
-              authenticated=False,
+          print()
+          print("========================================")
+          print("SCHEMA SUMMARY")
+          print("========================================")
+          print(
+              f"Expected variables: "
+              f"{len(EXPECTED_VARIABLES)}"
+          )
+          print(
+              f"Expected variables found: "
+              f"{len(EXPECTED_VARIABLES) - len(missing)}"
+          )
+          print(
+              f"Expected variables missing: "
+              f"{len(missing)}"
+          )
+          print(
+              f"Additional published variables: "
+              f"{len(extras)}"
           )
 
-          # --------------------------------------------------
-          # Test 2
-          # Authenticated read-only API request.
-          # This does NOT execute a workflow.
-          # --------------------------------------------------
+          if missing:
+              print(
+                  "Missing expected variables: "
+                  + ", ".join(missing)
+              )
 
-          probe(
-              "Authenticated workflow parameters read",
-              f"{BASE}/parameters",
-              method="GET",
-              authenticated=True,
-          )
+          if extras:
+              print(
+                  "Additional variables: "
+                  + ", ".join(extras)
+              )
 
-          # --------------------------------------------------
-          # Test 3
-          # OPTIONS against the run endpoint.
-          #
-          # IMPORTANT:
-          # This is NOT POST.
-          # It contains no workflow inputs.
-          # It cannot intentionally start 5OC.
-          # --------------------------------------------------
+          print()
+          print("FILE INPUT DETAILS")
+          print("----------------------------------------")
 
-          probe(
-              "Workflow run endpoint OPTIONS probe",
-              f"{BASE}/workflows/run",
-              method="OPTIONS",
-              authenticated=True,
-          )
+          for variable in (
+              "standalone_resume_file",
+              "standalone_document_file",
+          ):
+              item = discovered.get(variable)
+
+              if not item:
+                  print(f"{variable}: NOT FOUND")
+                  continue
+
+              print(f"{variable}:")
+              print(
+                  json.dumps(
+                      item,
+                      indent=2,
+                      ensure_ascii=False,
+                      sort_keys=True
+                  )
+              )
 
           print()
           print("========================================")
@@ -190,7 +305,8 @@ jobs:
           print("========================================")
           print("POST /workflows/run called: NO")
           print("5OC workflow started: NO")
-          print("Supabase record 2 modified: NO")
+          print("Supabase modified: NO")
+          print("Dify file uploaded: NO")
           print("Expected Dify LLM credits used: 0")
           print("========================================")
           PY
