@@ -1,0 +1,43 @@
+name: 5OC Worker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  connection-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Verify worker configuration
+        env:
+          DIFY_5OC_API_KEY: ${{ secrets.DIFY_5OC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          echo "Checking 5OC worker configuration..."
+
+          if [ -z "$DIFY_5OC_API_KEY" ]; then
+            echo "::error::DIFY_5OC_API_KEY is missing."
+            exit 1
+          fi
+
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "::error::SUPABASE_URL is missing."
+            exit 1
+          fi
+
+          if [ -z "$SUPABASE_SECRET_KEY" ]; then
+            echo "::error::SUPABASE_SECRET_KEY is missing."
+            exit 1
+          fi
+
+          echo "DIFY_5OC_API_KEY: configured"
+          echo "SUPABASE_URL: configured"
+          echo "SUPABASE_SECRET_KEY: configured"
+          echo "5OC worker shell is ready."
+          echo "No Dify request was made."
+          echo "No Supabase database request was made."
