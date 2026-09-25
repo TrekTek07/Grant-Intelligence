@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  supabase-connection-test:
+  storage-retrieval-test:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -18,6 +18,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
+          set -euo pipefail
+
           echo "Checking 5OC worker configuration..."
 
           if [ -z "$DIFY_5OC_API_KEY" ]; then
@@ -37,25 +39,26 @@ jobs:
 
           echo "Worker secrets are configured."
 
-      - name: Read protected 5OC test record from Supabase
+      - name: Read durable 5OC run record
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
           set -euo pipefail
 
-          PROJECT_ID="GI-DATABASE-SAFETY-TEST-001"
+          PROJECT_ID="GI-WEBSITE-STORAGE-TEST-002"
 
-          echo "Reading existing 5OC safety-test record..."
+          echo "Reading durable 5OC run record..."
+          echo "Project ID: ${PROJECT_ID}"
           echo "Dify will NOT be contacted."
 
           HTTP_CODE=$(curl --silent --show-error \
-            --output /tmp/5oc-response.json \
+            --output /tmp/5oc-run.json \
             --write-out "%{http_code}" \
             --get \
             "${SUPABASE_URL}/rest/v1/five_oc_runs" \
             --data-urlencode "project_id=eq.${PROJECT_ID}" \
-            --data-urlencode "select=id,project_id,status,workflow_run_id,task_id,dify_user,launch_attempted_at,created_at,updated_at" \
+            --data-urlencode "select=id,project_id,status,resume_storage_path,inputs_json,workflow_run_id,task_id,dify_user,launch_attempted_at" \
             --header "apikey: ${SUPABASE_SECRET_KEY}" \
             --header "Authorization: Bearer ${SUPABASE_SECRET_KEY}" \
             --header "Accept: application/json")
@@ -63,58 +66,144 @@ jobs:
           echo "Supabase HTTP status: ${HTTP_CODE}"
 
           if [ "${HTTP_CODE}" != "200" ]; then
-            echo "::error::Supabase request failed."
-            cat /tmp/5oc-response.json
-            exit 1
-          fi
-
-          RECORD_COUNT=$(python3 - <<'PY'
-          import json
-
-          with open("/tmp/5oc-response.json", "r") as f:
-              data = json.load(f)
-
-          if not isinstance(data, list):
-              raise SystemExit("Supabase did not return a JSON array.")
-
-          print(len(data))
-          PY
-          )
-
-          if [ "${RECORD_COUNT}" != "1" ]; then
-            echo "::error::Expected exactly one protected test record; found ${RECORD_COUNT}."
+            echo "::error::Could not read five_oc_runs."
+            cat /tmp/5oc-run.json
             exit 1
           fi
 
           python3 - <<'PY'
           import json
+          import os
 
-          with open("/tmp/5oc-response.json", "r") as f:
+          with open("/tmp/5oc-run.json", "r") as f:
               data = json.load(f)
+
+          if not isinstance(data, list) or len(data) != 1:
+              raise SystemExit(
+                  f"Expected exactly one run record; found {len(data) if isinstance(data, list) else 'invalid response'}."
+              )
 
           row = data[0]
 
-          if row.get("project_id") != "GI-DATABASE-SAFETY-TEST-001":
-              raise SystemExit("Unexpected project_id returned.")
+          if row.get("id") != 2:
+              raise SystemExit(
+                  f"Expected record ID 2; received {row.get('id')}."
+              )
+
+          if row.get("project_id") != "GI-WEBSITE-STORAGE-TEST-002":
+              raise SystemExit("Unexpected project_id.")
 
           if row.get("status") != "created":
               raise SystemExit(
-                  f"Unexpected test status: {row.get('status')}"
+                  f"Expected status created; received {row.get('status')}."
               )
 
           if row.get("workflow_run_id") is not None:
               raise SystemExit(
-                  "Safety-test record unexpectedly contains a workflow_run_id."
+                  "workflow_run_id should still be null."
+              )
+
+          if row.get("task_id") is not None:
+              raise SystemExit(
+                  "task_id should still be null."
               )
 
           if row.get("launch_attempted_at") is not None:
               raise SystemExit(
-                  "Safety-test record unexpectedly shows a Dify launch attempt."
+                  "launch_attempted_at should still be null."
               )
+
+          inputs = row.get("inputs_json") or {}
+          resume = inputs.get("resume") or {}
+
+          path = row.get("resume_storage_path")
+          expected_path = resume.get("storage_path")
+
+          if not path:
+              raise SystemExit(
+                  "resume_storage_path is missing."
+              )
+
+          if path != expected_path:
+              raise SystemExit(
+                  "Database resume_storage_path does not match inputs_json."
+              )
+
+          expected_size = resume.get("size")
+
+          if not isinstance(expected_size, int) or expected_size <= 0:
+              raise SystemExit(
+                  "Invalid expected résumé size."
+              )
+
+          if resume.get("storage_bucket") != "five-oc-inputs":
+              raise SystemExit(
+                  "Unexpected storage bucket."
+              )
+
+          with open(os.environ["GITHUB_ENV"], "a") as env:
+              env.write(f"RESUME_STORAGE_PATH={path}\n")
+              env.write(f"EXPECTED_RESUME_SIZE={expected_size}\n")
 
           print(f"Record ID: {row.get('id')}")
           print(f"Project ID: {row.get('project_id')}")
           print(f"Status: {row.get('status')}")
-          print("Protected Supabase record retrieved successfully.")
-          print("No Dify request was made.")
+          print(f"Expected résumé bytes: {expected_size}")
+          print("Durable run record verified.")
           PY
+
+      - name: Retrieve private resume from Supabase Storage
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+
+          echo "Retrieving résumé from private Supabase Storage..."
+          echo "Dify will NOT be contacted."
+
+          HTTP_CODE=$(curl --silent --show-error \
+            --output /tmp/5oc-resume.bin \
+            --write-out "%{http_code}" \
+            "${SUPABASE_URL}/storage/v1/object/authenticated/five-oc-inputs/${RESUME_STORAGE_PATH}" \
+            --header "apikey: ${SUPABASE_SECRET_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_SECRET_KEY}")
+
+          echo "Storage HTTP status: ${HTTP_CODE}"
+
+          if [ "${HTTP_CODE}" != "200" ]; then
+            echo "::error::Private résumé retrieval failed."
+            exit 1
+          fi
+
+          ACTUAL_SIZE=$(wc -c < /tmp/5oc-resume.bin)
+          ACTUAL_SIZE=$(echo "${ACTUAL_SIZE}" | tr -d ' ')
+
+          echo "Expected résumé bytes: ${EXPECTED_RESUME_SIZE}"
+          echo "Downloaded résumé bytes: ${ACTUAL_SIZE}"
+
+          if [ "${ACTUAL_SIZE}" -le 0 ]; then
+            echo "::error::Downloaded résumé is empty."
+            exit 1
+          fi
+
+          if [ "${ACTUAL_SIZE}" != "${EXPECTED_RESUME_SIZE}" ]; then
+            echo "::error::Downloaded résumé size does not match the stored metadata."
+            exit 1
+          fi
+
+          echo "Private résumé retrieved successfully."
+          echo "Résumé byte count matches stored metadata."
+          echo "No Dify request was made."
+
+      - name: Confirm safe handoff
+        run: |
+          echo "========================================"
+          echo "5OC DURABLE HANDOFF TEST: PASSED"
+          echo "========================================"
+          echo "GitHub Worker -> Supabase DB: PASSED"
+          echo "GitHub Worker -> Private Storage: PASSED"
+          echo "Résumé integrity check: PASSED"
+          echo "Dify contacted: NO"
+          echo "5OC workflow started: NO"
+          echo "========================================"
