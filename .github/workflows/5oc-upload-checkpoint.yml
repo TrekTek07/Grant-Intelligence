@@ -1,0 +1,284 @@
+name: 5OC Upload Checkpoint
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upload-resume:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      PROJECT_ID: GI-WEBSITE-INTEGRATED-TEST-003
+      DIFY_USER: github-5oc-worker
+
+    steps:
+      - name: Upload stored resume to Dify and persist checkpoint
+        env:
+          DIFY_5OC_API_KEY: ${{ secrets.DIFY_5OC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+
+          project_id = os.environ["PROJECT_ID"]
+          base = os.environ["SUPABASE_URL"].rstrip("/")
+          key = os.environ["SUPABASE_SECRET_KEY"]
+
+          query = urllib.parse.urlencode({
+              "project_id": f"eq.{project_id}",
+              "select": (
+                  "id,project_id,status,resume_storage_path,"
+                  "inputs_json,dify_resume_upload_id,dify_user,"
+                  "workflow_run_id,task_id,launch_attempted_at"
+              ),
+          })
+
+          req = urllib.request.Request(
+              f"{base}/rest/v1/five_oc_runs?{query}",
+              headers={
+                  "apikey": key,
+                  "Authorization": f"Bearer {key}",
+                  "Accept": "application/json",
+              },
+          )
+
+          with urllib.request.urlopen(req, timeout=30) as response:
+              rows = json.loads(response.read().decode())
+
+          if not isinstance(rows, list) or len(rows) != 1:
+              raise SystemExit(
+                  "Expected exactly one durable run record."
+              )
+
+          row = rows[0]
+
+          if row.get("status") != "created":
+              raise SystemExit(
+                  f"SAFETY STOP: expected status created; "
+                  f"received {row.get('status')}."
+              )
+
+          if row.get("launch_attempted_at") is not None:
+              raise SystemExit(
+                  "SAFETY STOP: launch_attempted_at is populated."
+              )
+
+          if row.get("workflow_run_id") is not None:
+              raise SystemExit(
+                  "SAFETY STOP: workflow_run_id is populated."
+              )
+
+          if row.get("task_id") is not None:
+              raise SystemExit(
+                  "SAFETY STOP: task_id is populated."
+              )
+
+          if row.get("dify_resume_upload_id") is not None:
+              raise SystemExit(
+                  "SAFETY STOP: Dify upload already exists. "
+                  "A second upload will not be created."
+              )
+
+          inputs = row.get("inputs_json") or {}
+          resume = inputs.get("resume") or {}
+
+          path = row.get("resume_storage_path")
+          expected_size = resume.get("size")
+          original_name = resume.get("original_name")
+          content_type = (
+              resume.get("content_type")
+              or "application/octet-stream"
+          )
+
+          if not path:
+              raise SystemExit("Résumé storage path is missing.")
+
+          if not isinstance(expected_size, int) or expected_size <= 0:
+              raise SystemExit("Invalid résumé size metadata.")
+
+          if not original_name:
+              raise SystemExit("Original résumé filename is missing.")
+
+          github_env = os.environ["GITHUB_ENV"]
+
+          with open(github_env, "a", encoding="utf-8") as env:
+              env.write(f"RUN_ID={row['id']}\n")
+              env.write(f"RESUME_STORAGE_PATH={path}\n")
+              env.write(f"EXPECTED_RESUME_SIZE={expected_size}\n")
+              env.write(f"RESUME_ORIGINAL_NAME={original_name}\n")
+              env.write(f"RESUME_CONTENT_TYPE={content_type}\n")
+
+          print("Durable record validation: PASSED")
+          print(f"Record ID: {row['id']}")
+          print("Existing Dify upload: NONE")
+          print("Workflow execution: NOT STARTED")
+          PY
+
+          HTTP_CODE=$(curl --silent --show-error \
+            --output /tmp/5oc-resume.bin \
+            --write-out "%{http_code}" \
+            "${SUPABASE_URL}/storage/v1/object/authenticated/five-oc-inputs/${RESUME_STORAGE_PATH}" \
+            --header "apikey: ${SUPABASE_SECRET_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_SECRET_KEY}")
+
+          echo "Storage HTTP status: ${HTTP_CODE}"
+
+          if [ "${HTTP_CODE}" != "200" ]; then
+            echo "::error::Private résumé retrieval failed."
+            exit 1
+          fi
+
+          ACTUAL_SIZE=$(wc -c < /tmp/5oc-resume.bin)
+          ACTUAL_SIZE=$(echo "${ACTUAL_SIZE}" | tr -d ' ')
+
+          echo "Expected résumé bytes: ${EXPECTED_RESUME_SIZE}"
+          echo "Downloaded résumé bytes: ${ACTUAL_SIZE}"
+
+          if [ "${ACTUAL_SIZE}" != "${EXPECTED_RESUME_SIZE}" ]; then
+            echo "::error::Résumé integrity check failed."
+            exit 1
+          fi
+
+          echo "Private résumé retrieval: PASSED"
+
+          HTTP_CODE=$(curl --silent --show-error \
+            --output /tmp/dify-upload.json \
+            --write-out "%{http_code}" \
+            --request POST \
+            "https://api.dify.ai/v1/files/upload" \
+            --header "Authorization: Bearer ${DIFY_5OC_API_KEY}" \
+            --header "User-Agent: Grant-Intelligence-5OC-Diagnostic/1.0" \
+            --form "file=@/tmp/5oc-resume.bin;filename=${RESUME_ORIGINAL_NAME};type=${RESUME_CONTENT_TYPE}" \
+            --form "user=${DIFY_USER}")
+
+          echo "Dify upload HTTP status: ${HTTP_CODE}"
+
+          if [ "${HTTP_CODE}" != "200" ] && \
+             [ "${HTTP_CODE}" != "201" ]; then
+            echo "::error::Dify résumé upload failed."
+            exit 1
+          fi
+
+          python3 - <<'PY'
+          import json
+          import os
+
+          with open("/tmp/dify-upload.json", "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          upload_id = data.get("id")
+
+          if not upload_id:
+              raise SystemExit(
+                  "Dify returned no upload file ID."
+              )
+
+          with open(
+              os.environ["GITHUB_ENV"],
+              "a",
+              encoding="utf-8",
+          ) as env:
+              env.write(f"DIFY_RESUME_UPLOAD_ID={upload_id}\n")
+
+          print("Dify résumé upload: PASSED")
+          print("Dify upload file ID received.")
+          print("/workflows/run called: NO")
+          PY
+
+          python3 - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+
+          payload = {
+              "dify_resume_upload_id":
+                  os.environ["DIFY_RESUME_UPLOAD_ID"],
+              "dify_user":
+                  os.environ["DIFY_USER"],
+              "updated_at":
+                  datetime.now(timezone.utc).isoformat(),
+          }
+
+          with open(
+              "/tmp/checkpoint-update.json",
+              "w",
+              encoding="utf-8",
+          ) as f:
+              json.dump(payload, f)
+          PY
+
+          HTTP_CODE=$(curl --silent --show-error \
+            --output /tmp/checkpoint-response.json \
+            --write-out "%{http_code}" \
+            --request PATCH \
+            "${SUPABASE_URL}/rest/v1/five_oc_runs?id=eq.${RUN_ID}&project_id=eq.${PROJECT_ID}&status=eq.created&dify_resume_upload_id=is.null&launch_attempted_at=is.null&workflow_run_id=is.null&task_id=is.null" \
+            --header "apikey: ${SUPABASE_SECRET_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_SECRET_KEY}" \
+            --header "Content-Type: application/json" \
+            --header "Prefer: return=representation" \
+            --data-binary @/tmp/checkpoint-update.json)
+
+          echo "Supabase checkpoint HTTP status: ${HTTP_CODE}"
+
+          if [ "${HTTP_CODE}" != "200" ]; then
+            echo "::error::Could not persist Dify upload checkpoint."
+            exit 1
+          fi
+
+          python3 - <<'PY'
+          import json
+          import os
+
+          with open(
+              "/tmp/checkpoint-response.json",
+              "r",
+              encoding="utf-8",
+          ) as f:
+              rows = json.load(f)
+
+          if not isinstance(rows, list) or len(rows) != 1:
+              raise SystemExit(
+                  "SAFETY STOP: checkpoint update did not "
+                  "affect exactly one record."
+              )
+
+          row = rows[0]
+
+          if (
+              row.get("dify_resume_upload_id")
+              != os.environ["DIFY_RESUME_UPLOAD_ID"]
+          ):
+              raise SystemExit(
+                  "Persisted Dify upload ID does not match."
+              )
+
+          if row.get("dify_user") != os.environ["DIFY_USER"]:
+              raise SystemExit(
+                  "Persisted Dify user does not match."
+              )
+
+          print("========================================")
+          print("5OC PRE-LAUNCH CHECKPOINT: PASSED")
+          print("========================================")
+          print(f"Record ID: {row.get('id')}")
+          print("Private résumé retrieval: PASSED")
+          print("Dify résumé upload: PASSED")
+          print("Dify upload ID persisted: PASSED")
+          print("Dify user persisted: PASSED")
+          print("Workflow run ID: NULL")
+          print("Task ID: NULL")
+          print("Launch attempted: NO")
+          print("/workflows/run called: NO")
+          print("5OC workflow execution: NOT STARTED")
+          print("========================================")
+          PY
