@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 45
 
     env:
-      PROJECT_ID: GI-WEBSITE-STORAGE-TEST-002
+      PROJECT_ID: GI-WEBSITE-INTEGRATED-TEST-003
       DIFY_USER: github-5oc-worker
 
     steps:
